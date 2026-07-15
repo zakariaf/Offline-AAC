@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Status** | Not started |
+| **Status** | Done — all 6 tasks |
 | **Tasks** | 6 |
 | **Depends on** | E00 (E01-T01 gates on E00-T03). E01-T06 additionally waits on E02-T03 and E04-T03. |
 

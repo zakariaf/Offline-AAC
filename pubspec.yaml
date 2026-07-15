@@ -69,7 +69,14 @@ flutter:
 
   # The typeface is bundled, never fetched. A runtime font download would put a
   # network path into an app whose entire claim is that it has none.
-  # fonts:
-  #   - family: AtkinsonHyperlegibleNext
-  #     fonts:
-  #       - asset: assets/fonts/AtkinsonHyperlegibleNext-VF.ttf
+  #
+  # One variable file, one axis (wght 200-800), upright only. Italic is a
+  # separate file and is not shipped: it has no role here, doubles the payload,
+  # and FontVariation('ital', 1) would silently no-op against this font.
+  fonts:
+    - family: AtkinsonHyperlegibleNext
+      fonts:
+        - asset: assets/fonts/AtkinsonHyperlegibleNext-VF.ttf
+
+  assets:
+    - assets/fonts/OFL.txt

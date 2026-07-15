@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E01 — Foundation |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | S |
 | **Depends on** | E02-T03, E04-T03, E05-T08 |
 | **Blocks** | E09-T03 |
@@ -186,3 +186,57 @@ Always reset to the home board. Someone mid-shutdown in an emergency room must l
 ## Done when
 
 A cold launch paints a usable, tappable home grid in the restored palette on frame one, with both error handlers already installed and TTS warm-up still running behind it.
+
+
+---
+
+## What actually happened
+
+`main()` implements the required order, and each step carries the failure it
+prevents: `CrashLog.open()` first; both error handlers installed **before** the
+database is touched; settings read behind a catch that cannot kill launch; the
+palette restored through a `ProviderScope` override so it is right on frame one
+rather than corrected on frame two; `runApp`; then a post-frame callback that
+fires the TTS warm-up and the stored-voice re-resolve and **awaits neither**.
+
+Five tests cover the contract, and two of them only exist because a criterion
+demanded them: the first frame lands on the board with nothing stacked above it,
+a saved `hcPaper` is live on the FIRST frame, a corrupt palette string comes up
+on `ink` rather than an assert, and the frame still paints when `warmUp()` never
+completes.
+
+### Two criteria could not be met, and the reason is one decision
+
+Both were written assuming **riverpod 3.x**. This app pins 2.6.1 on purpose:
+every 3.x release declares `test` — and `flutter_riverpod` declares
+`flutter_test` — as a **runtime** dependency, which drags the test framework,
+shelf and `web_socket_channel` into the shipping graph of an app whose whole
+claim is that it has no network path.
+
+1. **`retry: (retryCount, error) => null` on the `ProviderScope`.** `ProviderScope`
+   in 2.6.1 takes only `overrides`, `observers`, `parent`, `child`. There is no
+   `retry` parameter to pass. Verified against the installed package source.
+2. **`riverpod_lint/missing_provider_scope`.** riverpod_lint 3.x depends on
+   `riverpod: 3.3.2` — an exact version — so it cannot resolve here.
+
+That is the running cost of the pin, now three items long. It is still the right
+trade: a clean, auditable dependency graph is worth more than a lint and a retry
+policy for six plain providers. Revisit **both together** if riverpod 3.x ever
+moves `test` back to `dev_dependencies` — they are one decision, not two.
+
+### Fixed on the way
+
+- **`app.dart` still had `const Placeholder()` as its home.** The design work ran
+  in parallel with the board and correctly flagged that E05 would swap it in;
+  nobody did. Every widget test found zero `BoardScreen` until it was wired. The
+  analyzer was green throughout — a placeholder compiles.
+- **`CrashLog` had only a private constructor**, so no widget test could build a
+  tree that reads it: the startup path, where a swallowed error is invisible
+  forever, was the one path with no coverage. Added `const CrashLog.discard()`,
+  reusing the null-file state `open()` already falls back to rather than adding
+  a second code path.
+- **One of my own assertions was wrong.** `find.byType(ModalBarrier)` fails
+  against a perfectly good app: `ModalRoute` builds a barrier for the initial
+  route, so every `MaterialApp` with a `home:` has one. Replaced with
+  `NavigatorState.canPop()`, which asks the real question — is anything stacked
+  above the grid.
