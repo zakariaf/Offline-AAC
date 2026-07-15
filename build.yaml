@@ -1,0 +1,15 @@
+# drift_dev needs to know which class is the database before `make-migrations`
+# will emit anything. Without this block the schema tooling silently does nothing,
+# and a schema change ships with no migration and no warning.
+targets:
+  $default:
+    builders:
+      drift_dev:
+        options:
+          store_date_time_values_as_text: true
+
+# `dart run drift_dev make-migrations` reads this.
+tools:
+  drift_dev:
+    databases:
+      app_database: lib/data/database/app_database.dart

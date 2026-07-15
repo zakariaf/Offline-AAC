@@ -57,32 +57,61 @@ def main() -> int:
         print("  (expected the output of: dart pub deps --json)", file=sys.stderr)
         return 2
 
-    names = {p["name"] for p in data.get("packages", []) if p.get("kind") != "root"}
-    # "direct" and "dev" are both declared in pubspec — only "transitive" arrived
-    # uninvited. Treating dev deps as transitive misreports where a ban came from.
-    roots = {p["name"] for p in data.get("packages", [])
-             if p.get("kind") in ("direct", "dev")}
+    pkgs = {p["name"]: p for p in data.get("packages", [])}
+    names = {n for n, p in pkgs.items() if p.get("kind") != "root"}
 
-    hits = []
-    for name in sorted(names):
-        if name in ALLOW:
-            continue
-        for pattern, why in BANNED:
-            if re.search(pattern, name, re.IGNORECASE):
-                how = "direct" if name in roots else "TRANSITIVE"
-                hits.append((name, how, why))
-                break
+    def reachable(kind: str) -> set[str]:
+        """Everything pulled in, transitively, by one class of declared dependency."""
+        seen: set[str] = set()
+        stack = [n for n, p in pkgs.items() if p.get("kind") == kind]
+        while stack:
+            n = stack.pop()
+            if n in seen or n not in pkgs:
+                continue
+            seen.add(n)
+            stack.extend(pkgs[n].get("dependencies", []))
+        return seen
 
-    print(f"{len(names)} packages resolved ({len(roots)} direct).")
-    for name, how, why in hits:
+    # What ships is what `dependencies:` drags in. `dev_dependencies:` — build_runner,
+    # drift_dev, the test framework — never reach the APK, so a banned package that is
+    # ONLY reachable from them is not a shipping defect. This distinction is the whole
+    # point: build_runner pulls shelf and web_socket_channel for its watch-mode server,
+    # and drift codegen requires build_runner. A gate that fails on an unavoidable dev
+    # dependency gets switched off, which is worse than no gate.
+    ships = reachable("direct")
+    dev_only = reachable("dev") - ships
+
+    def banned_in(pool: set[str]) -> list[tuple[str, str]]:
+        found = []
+        for name in sorted(pool):
+            if name in ALLOW:
+                continue
+            for pattern, why in BANNED:
+                if re.search(pattern, name, re.IGNORECASE):
+                    found.append((name, why))
+                    break
+        return found
+
+    hits = banned_in(ships)
+    noise = banned_in(dev_only)
+    direct_names = {n for n, p in pkgs.items() if p.get("kind") == "direct"}
+
+    print(f"{len(names)} resolved · {len(ships)} ship in the APK · {len(dev_only)} build/test only")
+    for name, why in hits:
+        how = "direct" if name in direct_names else "TRANSITIVE"
         print(f"BANNED  {name}  [{how}]\n        {why}")
+
+    if noise:
+        print(f"\nBuild/test only — not in the APK, not a defect:")
+        for name, _ in noise:
+            print(f"  {name}")
 
     if hits:
         print("\nRefuse the dependency, or find one that does not pull these in.")
         print("To see who pulls a package in:  dart pub deps | grep -B4 <name>")
         return 1
 
-    print("Clean: no network path, no analytics SDK, no Firebase.")
+    print("\nClean: nothing banned reaches the binary.")
     return 0
 
 

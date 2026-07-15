@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E01 — Foundation |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | S |
 | **Depends on** | E00-T03 |
 | **Blocks** | E01-T02, E01-T03, E02-T01, E02-T02, E04-T01, E09-T02 |
@@ -184,3 +184,47 @@ Does not touch: `analysis_options.yaml` contents (E01-T02), `android/`, any `.g.
 ## Done when
 
 `flutter pub get` and `dart analyze` are clean, the dependency audit script exits 0, and every grep and `find` in the acceptance criteria returns exactly what it should — including the ones asserting the deliberately-absent directories are still absent.
+
+
+---
+
+## What actually happened
+
+Two dependencies named in this task had rotted since it was written. Both were
+caught by running the dependency audit *before* committing to the tree, which is
+the entire reason that step exists.
+
+**`sqlite3_flutter_libs` is end-of-life.** Its final release is `0.6.0+eol`
+(Feb 2026), an empty tombstone whose description reads *"Not used anymore, update
+to version 3.x of package:sqlite3 instead"* — no dependencies, no Flutter section.
+`sqlite3` 3.x supplies the native library through Dart build hooks rather than the
+Flutter plugin mechanism. **Replaced with `sqlite3: ^3.4.0`.**
+
+> Not yet verified on device: the build hook fetches a pre-compiled binary at
+> build time, so the first real Android build is the test of this decision, and
+> an offline build machine will fail. The Android toolchain on this machine is
+> SDK 35 and Flutter wants 36, so no APK has been built yet. **E03-T01 must not
+> be called done until `flutter build apk` succeeds.**
+
+**Riverpod is pinned to 2.x on purpose.** Every 3.x release declares `test` — and
+`flutter_riverpod` declares `flutter_test` — as a **runtime** dependency, not a dev
+one. That drags the test framework, `shelf`, and `web_socket_channel` into the
+app's dependency graph. `2.6.1` is clean, and this app's stated usage (six plain
+providers, no families, no scoping, no codegen) is 2.x-shaped anyway. Revisit only
+if 3.x moves those back to `dev_dependencies`.
+
+**The audit script had a false positive and was fixed.** It flagged every banned
+package anywhere in the resolution, including ones reachable only from
+`dev_dependencies`. `build_runner` — which drift codegen requires — pulls `shelf`
+and `web_socket_channel` for its watch-mode server, and neither reaches the APK.
+The script now computes reachability from `dependencies:` and `dev_dependencies:`
+separately, fails only on what ships, and reports build-only hits as information.
+A gate that fails on an unavoidable dev dependency gets switched off, which is
+worse than no gate.
+
+**Also removed:** `cupertino_icons` and `flutter_lints`, both added by
+`flutter create` and both unused here — the lint set is `very_good_analysis`, and
+there are no Cupertino icons in an Android-first app.
+
+**Application ID:** `dev.zakariafatahi.offline_aac`. Trivial to change now,
+permanent after the first store upload.

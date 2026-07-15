@@ -1,0 +1,74 @@
+name: offline_aac
+description: "Reed — offline speech for people whose voice comes and goes."
+publish_to: 'none'
+
+# Android versionName / versionCode. Both overridable at build time with
+# --build-name / --build-number.
+version: 0.1.0+1
+
+# A range, never an exact pin. The exact toolchain lives in .fvmrc, which CI
+# reads; the tool `fvm` itself is not required or installed.
+environment:
+  sdk: ^3.12.2
+
+# Six direct dependencies. Every one is here because it cannot be written or
+# faked in-process. Before adding a seventh, run:
+#
+#   dart pub deps --json > /tmp/deps.json
+#   python3 .claude/skills/reed-dependency-hygiene/scripts/audit_deps.py /tmp/deps.json
+#
+# It fails on anything that opens a network path, reports crashes or usage,
+# drags in Firebase, or collects device identifiers — checking the resolved
+# tree, not the pubspec, because the second hop is where those arrive.
+dependencies:
+  # The iOS audio session category. `.playback`, never `.ambient` — the ambient
+  # category lets the hardware silent switch mute the app, which means a user
+  # flips their ringer switch for a meeting and loses their voice.
+  audio_session: ^0.2.4
+
+  drift: ^2.34.2
+
+  flutter:
+    sdk: flutter
+
+  # Pinned to 2.x deliberately. Every riverpod 3.x release declares `test`
+  # (and flutter_riverpod declares `flutter_test`) as a RUNTIME dependency, which
+  # drags the test framework, shelf, and web_socket_channel into the app's
+  # dependency graph. 2.6.1 is clean, and the usage here — six plain providers,
+  # no families, no scoping, no codegen — is 2.x-shaped anyway.
+  flutter_riverpod: ^2.6.1
+
+  flutter_tts: ^4.2.5
+
+  path_provider: ^2.1.6
+
+  # NOT sqlite3_flutter_libs: that package is end-of-life as of Feb 2026
+  # ("Not used anymore, update to version 3.x of package:sqlite3 instead") and
+  # its final release is an empty tombstone. sqlite3 3.x supplies the native
+  # library through Dart build hooks instead of the Flutter plugin mechanism.
+  sqlite3: ^3.4.0
+
+dev_dependencies:
+  # Required by drift_dev. It pulls shelf and web_socket_channel for its
+  # watch-mode server; those are build-only and never reach the APK, which is
+  # why the dependency audit separates what ships from what builds.
+  build_runner: ^2.15.1
+
+  drift_dev: ^2.34.0
+
+  flutter_test:
+    sdk: flutter
+
+  # The lint set. The include line in analysis_options.yaml is version-pinned to
+  # this major and must move with it.
+  very_good_analysis: ^10.3.0
+
+flutter:
+  uses-material-design: true
+
+  # The typeface is bundled, never fetched. A runtime font download would put a
+  # network path into an app whose entire claim is that it has none.
+  # fonts:
+  #   - family: AtkinsonHyperlegibleNext
+  #     fonts:
+  #       - asset: assets/fonts/AtkinsonHyperlegibleNext-VF.ttf
