@@ -353,7 +353,7 @@ This is the answer to "two apps stapled together": the field is not an input bol
 
 **Never autofocus** — a keyboard covering the grid at cold launch is catastrophic for the core use case. Set `resizeToAvoidBottomInset: false`: keyboard insets must not resize or reflow the grid, because reflow breaks the fixed-position guarantee.
 
-Use `ShapedInputBorder(shape: RoundedSuperellipseBorder(...))`. <!-- VERIFY: ShapedInputBorder is 3.44 (PR #177220). Compile-tested here on 3.41.2 and it does NOT exist ("The function 'ShapedInputBorder' isn't defined"). On 3.41.x use OutlineInputBorder at 20dp and swap on upgrade. There is no `RoundedSuperellipseInputBorder` — that name is wrong in the corpus. -->
+Use `ShapedInputBorder(shape: RoundedSuperellipseBorder(...))`. <!-- RESOLVED 2026-07-15: `ShapedInputBorder` confirmed present in Flutter 3.44.6 stable (`packages/flutter/lib/src/material/input_border.dart:606`). The 3.41.2 fallback to `OutlineInputBorder` is no longer needed. There is no `RoundedSuperellipseInputBorder` — that name was wrong in the research corpus. -->
 
 **Do not go bespoke on `TextField`.** Reimplementing IME and selection is a multi-month trap. The tile is bespoke; the field is Material.
 
