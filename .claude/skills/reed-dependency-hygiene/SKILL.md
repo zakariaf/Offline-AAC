@@ -100,6 +100,20 @@ After any upgrade touching `drift` or `drift_dev`, regenerate and commit — gen
 - it stops building against a Flutter release, or
 - a regression ships and upstream is unresponsive for a few weeks.
 
+**The first trigger is no longer hypothetical — it is scheduled.** Building against Flutter 3.44.6 emits:
+
+> `WARNING: Your app uses the following plugins that apply Kotlin Gradle Plugin (KGP): flutter_tts`
+> `Future versions of Flutter will fail to build if your app uses plugins that apply KGP.`
+
+`flutter_tts` still applies the legacy KGP rather than Built-in Kotlin. Today it is a warning and the APK builds. On some future Flutter release it becomes an error, and on that day the app cannot be built at all — with no upstream fix guaranteed from a single maintainer.
+
+So: check this warning on **every Flutter upgrade**, and treat its disappearance-or-escalation as the countdown it is. Two ways out, and the cheap one has a deadline:
+
+1. **Upstream migrates to Built-in Kotlin.** Watch for it; if a release lands, upgrade and the problem evaporates.
+2. **Vendor it.** Only four methods are called, so the vendored copy is small — and once vendored, the Android side is yours to migrate to Built-in Kotlin directly.
+
+Do not let this become an emergency discovered on the day a Flutter upgrade is needed for something else. It is the single dependency whose failure means the app does not exist.
+
 **Procedure:**
 
 1. `git clone` upstream at the **last-good tag** into `third_party/flutter_tts/`. Record the exact commit SHA.

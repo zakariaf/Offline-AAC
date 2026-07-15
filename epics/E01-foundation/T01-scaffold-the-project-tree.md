@@ -200,11 +200,11 @@ to version 3.x of package:sqlite3 instead"* — no dependencies, no Flutter sect
 `sqlite3` 3.x supplies the native library through Dart build hooks rather than the
 Flutter plugin mechanism. **Replaced with `sqlite3: ^3.4.0`.**
 
-> Not yet verified on device: the build hook fetches a pre-compiled binary at
-> build time, so the first real Android build is the test of this decision, and
-> an offline build machine will fail. The Android toolchain on this machine is
-> SDK 35 and Flutter wants 36, so no APK has been built yet. **E03-T01 must not
-> be called done until `flutter build apk` succeeds.**
+> **VERIFIED 2026-07-15.** `flutter build apk --debug` succeeds and
+> `libsqlite3.so` ships for `arm64-v8a`, `armeabi-v7a` and `x86_64`. The build
+> hook works. Two caveats that remain true: the hook **downloads** a pre-compiled
+> binary at build time, so a fully offline build machine will fail; and shipping
+> the library is not the same as opening a database — E03-T01 still proves that.
 
 **Riverpod is pinned to 2.x on purpose.** Every 3.x release declares `test` — and
 `flutter_riverpod` declares `flutter_test` — as a **runtime** dependency, not a dev
