@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E01 — Foundation |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | S |
 | **Depends on** | E01-T02 |
 | **Blocks** | Nothing |
@@ -197,3 +197,28 @@ Changes (doc comments at the point of temptation only, no behaviour):
 ## Done when
 
 `flutter test test/policy` is green, and each of the six invariants has been broken by hand in a scratch commit and observed to turn the suite red with a message that names the file, the line, and what it costs the user.
+
+
+---
+
+## What actually happened
+
+Seven tests across four files, and **every one was negative-controlled** — a
+policy test that has never failed is a decoration:
+
+| Planted violation | Result |
+|---|---|
+| Delete the `TTS_SERVICE` queries entry | caught |
+| Add the `INTERNET` permission | caught |
+| Flip `.playback` to `.ambient` | caught |
+| Import a crash-reporting SDK in `lib/` | caught, names `_bad.dart:1` |
+| A **comment** mentioning a banned package | correctly ignored |
+
+The comment case is why `policy_helpers.dart` strips comments before matching
+while preserving line numbers. Failing on `// never use package:http here`
+teaches developers to delete the comments that explain the rule.
+
+This task also landed the manifest work it asserts (the `TTS_SERVICE` queries
+entry, `allowBackup=false`, and `data_extraction_rules.xml`) plus a real
+`audio_session_config.dart` — nominally E04-T04 and E09-T02. A gate asserting
+files that do not exist is not a gate.

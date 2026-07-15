@@ -40,6 +40,7 @@ dependencies:
 
   flutter_tts: ^4.2.5
 
+  path: ^1.9.1
   path_provider: ^2.1.6
 
   # NOT sqlite3_flutter_libs: that package is end-of-life as of Feb 2026
@@ -54,7 +55,7 @@ dev_dependencies:
   # why the dependency audit separates what ships from what builds.
   build_runner: ^2.15.1
 
-  drift_dev: ^2.34.0
+  drift_dev: ^2.34.4
 
   flutter_test:
     sdk: flutter

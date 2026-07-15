@@ -1,0 +1,130 @@
+# CI CANNOT VERIFY THAT THIS APP SPEAKS. Two reasons, and the second is
+# permanent:
+#
+#   1. The Android emulator ships no text-to-speech engine, so getVoices()
+#      returns an empty list in CI regardless of whether the code is correct.
+#   2. Nothing in Flutter, Android, or any test framework can capture synthesised
+#      audio and assert a human heard words. There is no hook. This is
+#      architectural, not a gap waiting for a better tool.
+#
+# So this workflow proves the code compiles, the analyzer is satisfied, the
+# generated output matches its source, the schema snapshot is current, and the
+# project-wide invariants hold. It does NOT prove the product works.
+#
+# THE CLOSURE IS THE MANUAL DEVICE PASS: a real phone — a cheap one, because
+# that is what this audience carries — with the RINGER SWITCH OFF, before every
+# release. A green CI badge here is not permission to ship.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Pinned, not `-latest`: a runner image that rolls forward under you turns a
+# green history red for reasons unrelated to the diff.
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          # Reads .fvmrc, which is the single record of the toolchain. `fvm`
+          # itself is not installed anywhere — the file exists because CI and a
+          # stranger read it.
+          flutter-version-file: .fvmrc
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Format
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze
+        # --fatal-infos: the severity promotions in analysis_options.yaml only
+        # matter if something acts on them.
+        run: flutter analyze --fatal-infos
+
+      - name: Generated output matches source
+        # Guards the failure where a committed .g.dart drifts from the table
+        # that generates it. Locally the app still runs off the stale file, so
+        # nothing surfaces until someone else clones the repo.
+        run: |
+          dart run build_runner build
+          if ! git diff --exit-code -- '*.g.dart' '*.drift.dart'; then
+            echo "::error::Generated output is stale. Run: dart run build_runner build"
+            exit 1
+          fi
+
+      - name: Schema snapshot is current
+        # THE HIGHEST SAFETY-PER-LINE CHECK IN THE PROJECT. It catches a schema
+        # changed without a schemaVersion bump — the bug that silently loses
+        # every board on the next release — and it costs one command. Without
+        # the dump, no migration runs, and the user's phrases are gone with no
+        # error and no telemetry.
+        run: |
+          dart run drift_dev schema dump lib/data/database/app_database.dart drift_schemas/
+          if ! git diff --exit-code -- drift_schemas/; then
+            echo "::error::Schema changed without a fresh dump. Dump BEFORE bumping schemaVersion, or the snapshot records the wrong shape. Shipping this loses every user's board."
+            exit 1
+          fi
+
+      - name: Dependency audit
+        # Fails only on what reaches the APK. build_runner legitimately pulls a
+        # websocket for its watch-mode server and never ships.
+        run: |
+          dart pub deps --json > /tmp/deps.json
+          python3 .claude/skills/reed-dependency-hygiene/scripts/audit_deps.py /tmp/deps.json
+
+      - name: Test
+        run: flutter test --coverage
+
+      - name: Coverage report
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq lcov
+          # Generated files would otherwise inflate the number with code nobody
+          # wrote and nobody can fix.
+          lcov --remove coverage/lcov.info \
+            '*/*.g.dart' '*/*.drift.dart' '*/generated_plugin_registrant.dart' \
+            -o coverage/lcov.info --ignore-errors unused
+          lcov --list coverage/lcov.info
+
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: coverage
+          path: coverage/lcov.info
+
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: .fvmrc
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Build APK
+        # This is the only step that exercises sqlite3's build hook, which
+        # DOWNLOADS a prebuilt native library at build time. If the hook ever
+        # breaks or the download host disappears, it fails here rather than on a
+        # user's phone.
+        run: flutter build apk --debug

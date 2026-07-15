@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E01 — Foundation |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | S |
 | **Depends on** | E01-T01 |
 | **Blocks** | E01-T04, E01-T05 |
@@ -188,3 +188,32 @@ The comment must end where the skill ends: **a green analyzer is not proof that 
 ## Done when
 
 `flutter analyze` exits 0 with no `include_file_not_found` warning, each promoted rule has been proven live by a deliberate violation that errors, and the arrow-callback hole is documented in a comment next to the rules that cannot see it.
+
+
+---
+
+## What actually happened
+
+**`close_sinks` was a silent no-op, and only the positive control found it.**
+The config promoted it to `error`, but an `errors:` entry can only change the
+SEVERITY of a diagnostic already being produced — it cannot turn a rule on.
+very_good_analysis never enables `close_sinks`; it only names it in its own
+`errors:` as `ignore`. A class holding an unclosed `StreamController` produced
+**no diagnostic at all**. Fixed by adding a `linter: rules:` block, which the
+file previously claimed was unnecessary. Re-verified: it now errors.
+
+This is exactly why the criteria demanded positive controls. Green was not
+evidence.
+
+**`riverpod_lint` was removed, and the block was lying.** The config declared
+`plugins: riverpod_lint:` with a diagnostics map. A file declaring a `Provider`
+and calling `runApp()` with no `ProviderScope` produced **no diagnostic** — the
+analyzer silently ignores a plugin it cannot resolve. It could not resolve
+because riverpod_lint 3.x depends on `riverpod: 3.3.2` **exactly**, and this app
+pins riverpod to 2.x on purpose (3.x declares `test` as a runtime dependency).
+The two are mutually exclusive; the pin wins, and the block is now a comment
+explaining why rather than a config that reports success it never earned.
+
+**Verified:** `discarded_futures` errors on `Future<void>.value()` in a
+non-async function. `include_file_not_found`: 0 hits. `analysis_options.10.3.0.yaml`
+resolves. `dart format --set-exit-if-changed`: clean.

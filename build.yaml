@@ -1,15 +1,19 @@
 # drift_dev needs to know which class is the database before `make-migrations`
-# will emit anything. Without this block the schema tooling silently does nothing,
-# and a schema change ships with no migration and no warning.
+# will emit anything. Without it the schema tooling reports "No databases found
+# in the build.yaml file" and a schema change ships with no migration and no
+# warning.
+#
+# `databases` is a drift_dev BUILDER OPTION. It is not a top-level `tools:` key —
+# build.yaml only accepts: builders, post_process_builders, targets,
+# global_options, additional_public_assets, triggers.
 targets:
   $default:
     builders:
       drift_dev:
         options:
+          # Store DateTime as ISO-8601 text rather than unix seconds. Text is
+          # readable in a hex dump of a user's exported board, and this app will
+          # only ever debug from a file the user chose to send.
           store_date_time_values_as_text: true
-
-# `dart run drift_dev make-migrations` reads this.
-tools:
-  drift_dev:
-    databases:
-      app_database: lib/data/database/app_database.dart
+          databases:
+            app_database: lib/data/database/app_database.dart

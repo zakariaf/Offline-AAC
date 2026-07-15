@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E01 — Foundation |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | S |
 | **Depends on** | E01-T01 |
 | **Blocks** | E03-T01 |
@@ -126,3 +126,30 @@ Add the stop rule too: **if a dump ever produces a diff on a snapshot for a vers
 ## Done when
 
 `dart run drift_dev make-migrations` runs without the "No databases found" error, a v1 snapshot sits committed in `drift_schemas/`, a repeat build and a repeat dump both produce zero diff, and the README carries the four commands plus the dump-before-bump rule.
+
+
+---
+
+## What actually happened
+
+Three things in this task's own instructions had rotted.
+
+**`--delete-conflicting-outputs` no longer exists.** build_runner now reports
+`These options have been removed and were ignored`. The correct command is just
+`dart run build_runner build`.
+
+**`tools:` is not a valid `build.yaml` key.** build.yaml accepts only `builders`,
+`post_process_builders`, `targets`, `global_options`, `additional_public_assets`,
+`triggers`. `databases` is a drift_dev **builder option** and belongs under
+`targets: $default: builders: drift_dev: options:`.
+
+**drift_dev 2.34.0 cannot run `make-migrations` against drift 2.34.2.** It calls
+`reference.allSchemaEntities`, which does not exist on the `GeneratedDatabase`
+that drift 2.34.2 exports (it now comes from a `drift3_preview` path). Fixed in
+**drift_dev 2.34.4** — pinned there. Note `flutter pub upgrade drift_dev` would
+NOT move it off 2.34.0; the version had to be requested explicitly.
+
+**Verified:** codegen exits 0; running it twice leaves `git diff --exit-code`
+green; `make-migrations` emits `drift_schema_v1.json`; re-dumping produces no
+diff; `flutter analyze --fatal-infos` is clean and reports nothing from a
+generated file.

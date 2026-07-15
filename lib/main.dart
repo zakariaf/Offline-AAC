@@ -13,6 +13,7 @@ class _Placeholder extends StatelessWidget {
   const _Placeholder();
 
   @override
-  Widget build(BuildContext context) =>
-      const MaterialApp(home: Scaffold(body: Center(child: Text('Reed'))));
+  Widget build(BuildContext context) => const MaterialApp(
+    home: Scaffold(body: Center(child: Text('Reed'))),
+  );
 }

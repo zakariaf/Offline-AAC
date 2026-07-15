@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E01 — Foundation |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | M |
 | **Depends on** | E01-T02 |
 | **Blocks** | E11-T02 |
@@ -221,3 +221,20 @@ Writing the policy test files themselves is out of scope here (they live under `
 ## Done when
 
 A push to `main` runs one workflow that formats, analyzes with `--fatal-infos`, proves generated code and `drift_schemas/` are fresh, runs the full suite with randomized ordering on `ubuntu-24.04`, uploads an unsigned release AAB — and says in its own header, in words, that none of it is evidence the app makes a sound.
+
+
+---
+
+## What actually happened
+
+Written and validated: the YAML parses, both jobs are `ubuntu-24.04`
+(`ubuntu-latest`: 0 hits), every action is pinned to a real major, and both jobs
+read the toolchain from `.fvmrc`.
+
+Every gate was run locally with real exit codes before being trusted — and that
+mattered: `dart format --set-exit-if-changed . | tail -1` reports the exit of
+`tail`, not of `format`. It looked green while six files were unformatted.
+
+The workflow opens by stating that CI can never verify the app speaks, gives
+both reasons, marks the second as architectural, and names the on-device pass
+with the ringer switch off as the closure.
