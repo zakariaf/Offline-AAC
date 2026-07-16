@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Status** | Not started |
+| **Status** | In progress — all repo-completable work landed (T03 done; T01/T02/T04 code, config, tests, and docs). The remaining gates are external and manual: create the upload keystore, enrol in Play App Signing, submit the Play Data Safety + Health-apps declarations, deselect the EU, run the on-device checklist, and upload the signed `.aab`. |
 | **Tasks** | 4 |
 | **Depends on** | E01 (foundation), E09 (portability), E10 (verification) |
 

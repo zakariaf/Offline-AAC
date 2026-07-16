@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E11 — Release |
-| **Status** | Not started |
+| **Status** | In progress — repo config landed (signingConfigs from git-ignored key.properties, minify off, versioning rule, key.properties.example, RELEASE.md). Manual, off-repo: create the upload keystore, enrol in Play App Signing, build + sign + upload the .aab, attach it to the GitHub Release. |
 | **Size** | S |
 | **Depends on** | E01-T04, E11-T03 |
 | **Blocks** | E11-T04 |

@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E11 — Release |
-| **Status** | Not started |
+| **Status** | In progress — repo landed: legal/privacy-policy.md (bundled + hosted), in-app settings → privacy policy with widget test, privacy_copy_test, store/play-listing.md + store/country-availability.md. Manual, in Play Console / App Store Connect: submit the Data Safety form, the Health-apps declaration, and deselect the EU. |
 | **Size** | M |
 | **Depends on** | E09-T02 |
 | **Blocks** | E11-T04 |

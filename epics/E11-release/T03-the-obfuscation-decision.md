@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E11 — Release |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | XS |
 | **Depends on** | E09-T03 |
 | **Blocks** | E11-T02 |

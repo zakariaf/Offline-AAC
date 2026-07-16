@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E11 — Release |
-| **Status** | Not started |
+| **Status** | In progress — store/tester-message.md drafted in-register and RELEASE.md is the release runbook. Manual: run docs/CHECKLIST.md on the cheap phone (ringer off, release build), build + sign the .aab, upload to the internal track, cut the tag + GitHub Release, send the message. |
 | **Size** | S |
 | **Depends on** | E10-T03, E10-T05, E11-T01, E11-T02 |
 | **Blocks** | Nothing |
