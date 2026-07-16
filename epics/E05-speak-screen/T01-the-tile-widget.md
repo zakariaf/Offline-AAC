@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E05 — The speak screen |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | M |
 | **Depends on** | E02-T03 |
 | **Blocks** | E05-T02, E05-T04, E10-T05 |

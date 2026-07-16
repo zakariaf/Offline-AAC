@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E05 — The speak screen |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | M |
 | **Depends on** | E04-T05, E05-T01 |
 | **Blocks** | E05-T07 |
@@ -11,6 +11,8 @@
 **Skills:** `reed-tile-anatomy` · `reed-motion-policy` · `reed-speech-service` · `reed-no-silent-failures`
 
 > Read these skills first. They carry the exact values this task must hit.
+
+> **Superseded on two points — see EPIC.md "Design update — 2026-07-16".** The board now reflows columns and scrolls vertically at large text sizes, so the lit state and speech commit on **`onTap`** (after winning the gesture arena), not `Listener.onPointerDown` — otherwise every scroll attempt would speak. The haptic still fires on `onTapDown` for immediate feedback. The no-scroll premise this task leans on no longer holds. Everything else here — the luminance step, the 2 dp/`ink` keyline promotion, the 120 ms hold, the latch guard timer, no STOP button, barge-in — stands, and the lit-state coverage lives in `test/ui/lit_state_test.dart`.
 
 ## Why this exists
 

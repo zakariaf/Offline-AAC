@@ -4,9 +4,22 @@
 
 | | |
 |---|---|
-| **Status** | Not started |
+| **Status** | Done |
 | **Tasks** | 8 |
 | **Depends on** | E02 (tokens and theme), E03 (the grid to render), E04 (something to speak with), E00 (the switch-access spike that E05-T06 is answerable to) |
+
+## Design update — 2026-07-16: responsive columns and vertical scroll
+
+Building the widget-test suite (T07) surfaced a contradiction baked into this epic: on a fixed, non-scrolling three-column grid, the warm multi-word labels ("I need to leave", "Give me a minute") fit three lines only at the default text size. By 1.3× they overflow, and because the label is capped at `kMaxLabelLines` with no ellipsis, the overflowing words are **silently dropped** — no error, a green test, and an unreadable handle for exactly the large-text users this app serves. The tile's own "never shrink, never ellipsize, be loud not tidy" rule and T07's "every label fits at 3.0×" requirement could not both hold.
+
+The resolution, chosen deliberately: **the grid reflows to fewer, wider columns (3 → 2 → 1) as the system text size grows, and the board scrolls vertically once the taller tiles no longer fit one screen.** Twelve tiles of 2–3× text cannot share a phone screen, so vertical scrolling is the only way to keep every word readable without shrinking, ellipsizing, or clamping the user's text scale. This is what actually serves the audience.
+
+Two load-bearing rules stated below are **superseded** by this decision, on these specific points only:
+
+- **Pointer-down feedback → tap.** The tile now commits speech on `onTap` (pointer up, after winning the gesture arena) rather than `Listener.onPointerDown`. Committing on down would speak on every scroll attempt. The haptic still fires on `onTapDown` for an immediate tactile acknowledgement; only speech and the lit state move to tap. This affects T01, T02, T04, T07, T08, and the "why" paragraph below.
+- **"The grid never scrolls."** The board wraps in a `SingleChildScrollView` at large text sizes. The no-scroll rule was the justification for pointer-down; both change together.
+
+Everything else in this epic stands unchanged: the luminance step and promoted keyline for the lit state, the 120 ms minimum hold, the latch guard timer, no STOP button, barge-in ordering, the type field at the top, `resizeToAvoidBottomInset: false`, no dividers, one uniform tile size. Column choice and tile height are computed by measuring labels with the real font (`lib/ui/board/responsive_grid.dart`), proven by `test/ui/label_fit_test.dart` (every word kept at 1.0–3.0×) and `test/ui/responsive_grid_test.dart`. Read the paragraph below with these two substitutions in mind.
 
 ## Why this epic exists
 

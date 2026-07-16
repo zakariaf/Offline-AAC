@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E05 — The speak screen |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | S |
 | **Depends on** | E03-T02, E05-T01 |
 | **Blocks** | E05-T03, E05-T05, E05-T06, E05-T08, E07-T01 |
@@ -11,6 +11,8 @@
 **Skills:** `reed-grid-layout` · `reed-tile-anatomy` · `reed-widget-conventions`
 
 > Read these skills first. They carry the exact values this task must hit.
+
+> **Superseded on the no-scroll rule — see EPIC.md "Design update — 2026-07-16".** The plane now reflows to fewer, wider columns as the text size grows and **scrolls vertically** once the taller tiles exceed one screen, so warm labels keep every word instead of being silently clipped. Column count and tile height are measured in `lib/ui/board/responsive_grid.dart`. At the default text size the layout is still the fixed 3-column grid described below; the unequal gutters, no dividers, computed tile size, and `resizeToAvoidBottomInset: false` all stand.
 
 ## Why this exists
 

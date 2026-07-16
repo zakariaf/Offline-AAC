@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E05 — The speak screen |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | M |
 | **Depends on** | E05-T04 |
 | **Blocks** | E10-T01, E10-T02, E10-T04 |
@@ -11,6 +11,8 @@
 **Skills:** `reed-widget-test-harness` · `reed-text-scale-testing` · `reed-a11y-testing` · `reed-testing-strategy`
 
 > Read these skills first. They carry the exact values this task must hit.
+
+> **Implemented with a scrolling, reflowing board — see EPIC.md "Design update — 2026-07-16".** `label_fit_test.dart` is the real gate and holds at 1.0–3.0× because the grid drops columns and the board scrolls to keep every word; it asserts `didExceedMaxLines == false` per tile (the shipped font is loaded so line counts are the phone's). `overflow_matrix_test.dart` runs the exact scales `[1.0, 1.3, 1.5, 2.0, 3.0]` × 3 devices × 2 bold = 30 and is now the coarse "no configuration flex-overflows" net. Because the board can scroll, off-screen tiles no longer report paint-time overflow — `label_fit` reads `RenderParagraph`s directly, so it catches truncation regardless. The harness loads the real font for every test (Ahem's fat glyphs would collapse the measured layout to one column). Column logic is unit-tested in `test/ui/responsive_grid_test.dart`.
 
 ## Why this exists
 
