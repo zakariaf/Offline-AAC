@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E09 — Portability and the crash log |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | S |
 | **Depends on** | E01-T01 |
 | **Blocks** | E11-T01 |

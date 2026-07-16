@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Status** | Not started |
+| **Status** | Done |
 | **Tasks** | 3 |
 | **Depends on** | E01 (E09-T02 on E01-T01 — the manifest and its policy test; E09-T03 on E01-T06 — the handlers in `main()` that call `record`), E03 (E09-T01 on E03-T02 — export reads the board through `BoardRepository`, never raw drift) |
 
