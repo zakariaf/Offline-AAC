@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E08 — Settings |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | S |
 | **Depends on** | E03-T03 |
 | **Blocks** | E08-T02, E08-T03, E08-T04 |

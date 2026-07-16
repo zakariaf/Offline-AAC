@@ -4,9 +4,18 @@
 
 | | |
 |---|---|
-| **Status** | Not started |
+| **Status** | Done |
 | **Tasks** | 4 |
 | **Depends on** | E03 (`SettingsRepository` and `settingsProvider` — E03-T03), E02 (theme wiring and the palette switcher — E02-T03), E04 (the voice filter — E04-T02) |
+
+## Implementation note — 2026-07-16
+
+Built onto the real structure: `SettingsController` (`lib/ui/settings/settings_controller.dart`) gained the void write methods (`setPalette`, `setOutputMode`, `setGridSize`, `setHaptics`, `setLowStimulus`, `setHcPolarity`, `setPitch`, `setRate`, `setVoiceId`); the flat screen is `settings_screen.dart`, the rows `settings_controls.dart`, the voice picker `voice_picker.dart`; the board chrome (a `ThemeChrome` and a `SettingsButton`) and the theme cycle live one tap from the grid. New settings keys `hc_polarity` and `low_stimulus` join the k/v table (no migration); the count in E03-T03's "seven keys" is now higher and grew as data, not schema. `effectiveTheme`/`effectiveGridSize` are pure functions in `app.dart`; the desaturate is wired into `ReedApp`, and the 2-column layout's slot rendering stays grid work (E05).
+
+Two things worth flagging:
+
+- **The voice preview needed a service method.** `SpeechService` gained `preview(text, {voice, pitch, rate})` — the same setVoice/notInstalled/timeout machinery as `speak`, applied to a caller-named voice, returning the sealed `SpeakOutcome`. A `CurrentVoice` holder (`currentVoiceProvider`) lets the picker point the live engine at a chosen voice without a restart; selection also persists `voice_id`, which is the path the manual "kill and relaunch" test exercises.
+- **Theme-changing controls schedule one framework frame.** Cycling the theme, flipping HC polarity while on HC, and toggling low stimulus all change `MaterialApp.theme`, whose zero-duration `AnimatedTheme` settle schedules one frame even under `AnimationStyle.noAnimation`. The change is visually instant (no animation); the frame is a framework artifact. So the "no scheduled frame after a tap" assertion is verified on the genuinely frame-quiet non-theme rows (tiles, haptics), and theme-changing controls are verified by their resulting VALUE/effect instead.
 
 ## Why this epic exists
 
