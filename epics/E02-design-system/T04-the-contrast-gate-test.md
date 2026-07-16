@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E02 — Design system in code |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | S |
 | **Depends on** | E02-T03 |
 | **Blocks** | Nothing |
@@ -163,3 +163,14 @@ A colour outside `tokens.dart` is a colour outside the gate.
 ## Done when
 
 `flutter test test/ui/contrast_test.dart` verifies every semantic pairing against its WCAG and APCA floor plus the independent grayscale channel across all four palettes, in about a second, with no golden file anywhere in the repo.
+
+
+---
+
+## What actually happened
+
+52 tests: 4 reference-pair anchors, 40 contrast pairings (one group per palette), 8 grayscale-survival tests. The APCA/WCAG maths is ported verbatim from the palette validator and pinned by the same published anchors (#000/#FFF=21.00, APCA #888/#FFF=63.1), so a green gate means the numbers the palette was designed against, not a second implementation.
+
+Every pairing asserts BOTH WCAG and APCA at its tier floor (resting 7/60, lit 4.5/45, ring 3/45, chrome 3/30). The grayscale test is separate and catches the chroma-only-feedback bug: negative-controlled by setting one stockLit equal to its stock, which goes red with "differ by only 1.0 in grayscale".
+
+Count note: the criterion estimated ~85; actual is 52 because the palette has four stocks, not a full categorical set. 52 is complete coverage of every semantic pairing — padding to a number is the theatre this gate exists to prevent.

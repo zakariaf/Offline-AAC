@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E02 — Design system in code |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | S |
 | **Depends on** | E01-T01 |
 | **Blocks** | E02-T03 |
@@ -163,3 +163,10 @@ Pairings to run, at minimum: ink-on-ground for all four palettes (`resting`); in
 ## Done when
 
 `tokens.dart` holds all four palettes with every role, stock, lit variant and show-mode value, the literal-ban grep and `dart analyze` are clean, `tokens_test.dart` passes, and every pairing in the file has been re-verified by `contrast.py` at its named tier rather than trusted from a table.
+
+
+---
+
+## What actually happened
+
+Built in the design track: `Prim` holds every role hex; the four palettes and stocks are complete. `grep Color(0x` finds only tokens.dart. All 30 pairings reproduce the validator exactly.

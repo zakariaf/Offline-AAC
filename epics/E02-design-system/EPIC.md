@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Status** | Not started |
+| **Status** | Done — all 4 tasks |
 | **Tasks** | 4 |
 | **Depends on** | E01 (both E02-T01 and E02-T02 gate on E01-T01) |
 

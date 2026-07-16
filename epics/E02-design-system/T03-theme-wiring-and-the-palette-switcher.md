@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E02 — Design system in code |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | M |
 | **Depends on** | E02-T01, E02-T02 |
 | **Blocks** | E01-T06, E02-T04, E05-T01, E08-T03 |
@@ -186,3 +186,10 @@ An unknown or corrupt palette name falls back to `AacPalette.ink` explicitly and
 ## Done when
 
 `flutter test` is green, the `Color(0x` and `fromSeed` greps return nothing, and three taps on the switcher from a cold start walk `paper → ink → high contrast → paper` with the choice surviving a restart and no frame scheduled after any of them.
+
+
+---
+
+## What actually happened
+
+Built: hand-authored ColorScheme (never fromSeed), the AacTheme ThemeExtension with a step-lerp, the three-position cycle, and NoSplash at the theme root. highContrastOf is read opportunistically, never gated on. Covered by the startup tests.

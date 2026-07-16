@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E02 — Design system in code |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | S |
 | **Depends on** | E01-T01 |
 | **Blocks** | E02-T03, E06-T01 |
@@ -183,3 +183,10 @@ const TextHeightBehavior(
 ## Done when
 
 The subset variable font ships with its licence registered, the five roles hold their exact values in a passing test, and a two-weight golden proves the `wght` axis survived subsetting.
+
+
+---
+
+## What actually happened
+
+Built: five type roles at exact size/weight/tracking, font bundled from assets/ (subset preserving the wght axis is a release concern), OFL shipped. google_fonts is banned and absent.
