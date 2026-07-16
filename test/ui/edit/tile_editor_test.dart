@@ -73,7 +73,10 @@ void main() {
     tester,
   ) async {
     await openEditor(tester, oneTile(label: 'Hi', vocalization: 'Hi'));
-    await tester.enterText(find.byType(TextField).first, '12345678901234567890');
+    await tester.enterText(
+      find.byType(TextField).first,
+      '12345678901234567890',
+    );
     final field = tester.widget<TextField>(find.byType(TextField).first);
     expect(field.controller!.text, '1234567890123456');
     expect(field.controller!.text.length, 16);

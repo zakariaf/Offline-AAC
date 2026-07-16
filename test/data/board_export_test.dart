@@ -41,11 +41,14 @@ void main() {
     return (ZipDecoder().decodeBytes(captured!), filename);
   }
 
-  Map<String, Object?> jsonOf(Archive archive, String name) => jsonDecode(
-    utf8.decode(
-      archive.files.firstWhere((f) => f.name == name).content as List<int>,
-    ),
-  ) as Map<String, Object?>;
+  Map<String, Object?> jsonOf(Archive archive, String name) =>
+      jsonDecode(
+            utf8.decode(
+              archive.files.firstWhere((f) => f.name == name).content
+                  as List<int>,
+            ),
+          )
+          as Map<String, Object?>;
 
   Map<String, Object?> boardJson(Archive archive) {
     // Resolve the board file through the manifest root — the DB assigns the
@@ -77,7 +80,11 @@ void main() {
     var ids = 0;
     for (final row in order) {
       final cells = row! as List;
-      expect(cells, hasLength(2), reason: 'every row is exactly `columns` long');
+      expect(
+        cells,
+        hasLength(2),
+        reason: 'every row is exactly `columns` long',
+      );
       for (final cell in cells) {
         if (cell == null) {
           nulls++;
@@ -93,63 +100,85 @@ void main() {
   test('hidden buttons ARE exported — hide is not delete', () async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     final (archive, _) = await exportControlled(db);
-    final hidden = buttonsOf(archive).where((b) => b['hidden'] == true).toList();
-    expect(hidden, hasLength(1), reason: 'a hidden button must survive the round trip');
-  });
-
-  test('a null vocalization serializes as null, not resolved to the label', () async {
-    final db = AppDatabase.forTesting(NativeDatabase.memory());
-    final (archive, _) = await exportControlled(db);
-    final nullVoc = buttonsOf(
+    final hidden = buttonsOf(
       archive,
-    ).where((b) => b['vocalization'] == null).toList();
-    expect(nullVoc, isNotEmpty);
-    // Its label is present — proving null was not backfilled from it.
-    expect(nullVoc.first['label'], isNotNull);
+    ).where((b) => b['hidden'] == true).toList();
+    expect(
+      hidden,
+      hasLength(1),
+      reason: 'a hidden button must survive the round trip',
+    );
   });
 
-  test('settings are NOT exported — no voice_id, theme, rate or pitch', () async {
-    final db = AppDatabase.forTesting(NativeDatabase.memory());
-    // A stored voice id that must NOT travel: it does not resolve on another
-    // phone, and the failure is a silent NoVoiceSelected mid-shutdown.
-    await db.into(db.settings).insert(
-      SettingsCompanion.insert(key: 'voice_id', value: 'en-US-voice-42'),
-    );
-    final (archive, _) = await exportControlled(db);
+  test(
+    'a null vocalization serializes as null, not resolved to the label',
+    () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final (archive, _) = await exportControlled(db);
+      final nullVoc = buttonsOf(
+        archive,
+      ).where((b) => b['vocalization'] == null).toList();
+      expect(nullVoc, isNotEmpty);
+      // Its label is present — proving null was not backfilled from it.
+      expect(nullVoc.first['label'], isNotNull);
+    },
+  );
 
-    expect(
-      archive.files.any((f) => f.name.contains('settings')),
-      isFalse,
-      reason: 'there is no settings file in the archive',
-    );
-    final wholeArchive = archive.files
-        .map((f) => utf8.decode(f.content as List<int>, allowMalformed: true))
-        .join('\n');
-    for (final leak in <String>['voice_id', 'en-US-voice-42', 'rate', 'pitch']) {
+  test(
+    'settings are NOT exported — no voice_id, theme, rate or pitch',
+    () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      // A stored voice id that must NOT travel: it does not resolve on another
+      // phone, and the failure is a silent NoVoiceSelected mid-shutdown.
+      await db
+          .into(db.settings)
+          .insert(
+            SettingsCompanion.insert(key: 'voice_id', value: 'en-US-voice-42'),
+          );
+      final (archive, _) = await exportControlled(db);
+
       expect(
-        wholeArchive.contains(leak),
+        archive.files.any((f) => f.name.contains('settings')),
         isFalse,
-        reason: 'a settings value ($leak) must never appear in an export',
+        reason: 'there is no settings file in the archive',
       );
-    }
-    await db.close();
-  });
+      final wholeArchive = archive.files
+          .map((f) => utf8.decode(f.content as List<int>, allowMalformed: true))
+          .join('\n');
+      for (final leak in <String>[
+        'voice_id',
+        'en-US-voice-42',
+        'rate',
+        'pitch',
+      ]) {
+        expect(
+          wholeArchive.contains(leak),
+          isFalse,
+          reason: 'a settings value ($leak) must never appear in an export',
+        );
+      }
+      await db.close();
+    },
+  );
 
-  test('the manifest records the format version, reed version and root', () async {
-    final db = AppDatabase.forTesting(NativeDatabase.memory());
-    final (archive, _) = await exportControlled(db);
-    final manifest = jsonOf(archive, 'manifest.json');
-    expect(manifest['format_version'], 1);
-    expect(manifest['reed_version'], '0.1.0');
-    expect(manifest['root'], matches(r'^boards/\d+\.json$'));
-    expect(manifest['exported_at'], startsWith('2026-07-16'));
-    // The board file the root points at exists in the archive.
-    expect(
-      archive.files.any((f) => f.name == manifest['root']),
-      isTrue,
-    );
-    await db.close();
-  });
+  test(
+    'the manifest records the format version, reed version and root',
+    () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final (archive, _) = await exportControlled(db);
+      final manifest = jsonOf(archive, 'manifest.json');
+      expect(manifest['format_version'], 1);
+      expect(manifest['reed_version'], '0.1.0');
+      expect(manifest['root'], matches(r'^boards/\d+\.json$'));
+      expect(manifest['exported_at'], startsWith('2026-07-16'));
+      // The board file the root points at exists in the archive.
+      expect(
+        archive.files.any((f) => f.name == manifest['root']),
+        isTrue,
+      );
+      await db.close();
+    },
+  );
 
   group('copy', () {
     test('the added strings state the fact, no exclamation, no straight quote, '
@@ -165,8 +194,16 @@ void main() {
       ];
       for (final line in lines) {
         expect(line.contains('!'), isFalse, reason: 'exclamation in "$line"');
-        expect(line.contains("'"), isFalse, reason: 'straight quote in "$line"');
-        expect(line.contains('...'), isFalse, reason: 'ascii ellipsis in "$line"');
+        expect(
+          line.contains("'"),
+          isFalse,
+          reason: 'straight quote in "$line"',
+        );
+        expect(
+          line.contains('...'),
+          isFalse,
+          reason: 'ascii ellipsis in "$line"',
+        );
         for (final banned in <String>[
           'sorry',
           'oops',
@@ -194,7 +231,11 @@ void main() {
         'lib/data/board_export.dart',
       ]) {
         final code = File(path).readAsStringSync();
-        expect(code.contains('showDialog'), isFalse, reason: '$path has a modal');
+        expect(
+          code.contains('showDialog'),
+          isFalse,
+          reason: '$path has a modal',
+        );
       }
     });
   });
@@ -207,38 +248,45 @@ Future<void> _buildBoard(AppDatabase db) async {
   await db.delete(db.buttons).go();
   await db.delete(db.boards).go();
 
-  final boardId = await db.into(db.boards).insert(
-    BoardsCompanion.insert(
-      name: 'exported board',
-      gridRows: 2,
-      gridCols: 2,
-      isRoot: const Value(true),
-    ),
-  );
+  final boardId = await db
+      .into(db.boards)
+      .insert(
+        BoardsCompanion.insert(
+          name: 'exported board',
+          gridRows: 2,
+          gridCols: 2,
+          isRoot: const Value(true),
+        ),
+      );
   final ids = <int>[];
   for (var i = 0; i < 4; i++) {
     ids.add(
-      await db.into(db.buttons).insert(
-        ButtonsCompanion.insert(
-          boardId: boardId,
-          label: 'L$i',
-          vocalization: i == 2 ? const Value<String?>(null) : Value('V$i'),
-        ),
-      ),
+      await db
+          .into(db.buttons)
+          .insert(
+            ButtonsCompanion.insert(
+              boardId: boardId,
+              label: 'L$i',
+              vocalization: i == 2 ? const Value<String?>(null) : Value('V$i'),
+            ),
+          ),
     );
   }
   for (var i = 0; i < 4; i++) {
-    await db.into(db.gridSlots).insert(
-      GridSlotsCompanion.insert(
-        boardId: boardId,
-        rowIndex: i ~/ 2,
-        colIndex: i % 2,
-        buttonId: Value(ids[i]),
-      ),
-    );
+    await db
+        .into(db.gridSlots)
+        .insert(
+          GridSlotsCompanion.insert(
+            boardId: boardId,
+            rowIndex: i ~/ 2,
+            colIndex: i % 2,
+            buttonId: Value(ids[i]),
+          ),
+        );
   }
   // Empty one slot (delete its button) and hide another.
   await (db.delete(db.buttons)..where((b) => b.id.equals(ids[3]))).go();
-  await (db.update(db.buttons)..where((b) => b.id.equals(ids[1])))
-      .write(const ButtonsCompanion(hidden: Value(true)));
+  await (db.update(db.buttons)..where((b) => b.id.equals(ids[1]))).write(
+    const ButtonsCompanion(hidden: Value(true)),
+  );
 }

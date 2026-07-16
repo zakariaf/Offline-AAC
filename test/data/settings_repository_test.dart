@@ -140,9 +140,14 @@ void main() {
 
     test('enabled defaults on, and a garbage value falls back to on', () async {
       expect((await settings.load()).standingLineEnabled, isTrue);
-      await db.into(db.settings).insertOnConflictUpdate(
-        SettingsCompanion.insert(key: 'standing_line_enabled', value: 'nope'),
-      );
+      await db
+          .into(db.settings)
+          .insertOnConflictUpdate(
+            SettingsCompanion.insert(
+              key: 'standing_line_enabled',
+              value: 'nope',
+            ),
+          );
       expect((await settings.load()).standingLineEnabled, isTrue);
     });
 
@@ -166,9 +171,11 @@ void main() {
 
     for (final garbage in <String>['', 'Speak ', 'silent', '2']) {
       test('garbage "$garbage" falls back to speak', () async {
-        await db.into(db.settings).insertOnConflictUpdate(
-          SettingsCompanion.insert(key: 'output_mode', value: garbage),
-        );
+        await db
+            .into(db.settings)
+            .insertOnConflictUpdate(
+              SettingsCompanion.insert(key: 'output_mode', value: garbage),
+            );
         expect((await settings.load()).output, OutputMode.speak);
       });
     }
@@ -190,9 +197,11 @@ void main() {
 
     for (final garbage in <String>['', 'True ', '1', 'yes']) {
       test('a garbage value "$garbage" falls back to false', () async {
-        await db.into(db.settings).insertOnConflictUpdate(
-          SettingsCompanion.insert(key: 'low_stimulus', value: garbage),
-        );
+        await db
+            .into(db.settings)
+            .insertOnConflictUpdate(
+              SettingsCompanion.insert(key: 'low_stimulus', value: garbage),
+            );
         expect((await settings.load()).lowStimulus, isFalse);
       });
     }
@@ -228,9 +237,11 @@ void main() {
 
     for (final garbage in <String>['', 'ink', 'paper', 'hcpaper']) {
       test('a non-HC value "$garbage" falls back to hcInk', () async {
-        await db.into(db.settings).insertOnConflictUpdate(
-          SettingsCompanion.insert(key: 'hc_polarity', value: garbage),
-        );
+        await db
+            .into(db.settings)
+            .insertOnConflictUpdate(
+              SettingsCompanion.insert(key: 'hc_polarity', value: garbage),
+            );
         expect((await settings.load()).hcPolarity, AacPalette.hcInk);
       });
     }
@@ -242,12 +253,17 @@ void main() {
     });
 
     for (final garbage in <String>['', '2', 'Bright ', 'matchtheme']) {
-      test('garbage "$garbage" falls back to bright and never throws', () async {
-        await db.into(db.settings).insertOnConflictUpdate(
-          SettingsCompanion.insert(key: 'show_polarity', value: garbage),
-        );
-        expect((await settings.load()).showPolarity, ShowPolarity.bright);
-      });
+      test(
+        'garbage "$garbage" falls back to bright and never throws',
+        () async {
+          await db
+              .into(db.settings)
+              .insertOnConflictUpdate(
+                SettingsCompanion.insert(key: 'show_polarity', value: garbage),
+              );
+          expect((await settings.load()).showPolarity, ShowPolarity.bright);
+        },
+      );
     }
 
     test('setShowPolarity writes the literal name "matchTheme"', () async {

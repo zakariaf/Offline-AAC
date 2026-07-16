@@ -200,9 +200,7 @@ class _BoardPlane extends StatelessWidget {
         // bold-text flag widens advances, and a column count that ignored it
         // would clip a label the instant bold is on.
         final labelStyle = AacType.tile.copyWith(
-          fontWeight: MediaQuery.boldTextOf(context)
-              ? FontWeight.w800
-              : null,
+          fontWeight: MediaQuery.boldTextOf(context) ? FontWeight.w800 : null,
         );
         final labels = <String>[
           for (final tile in board.tiles)
@@ -287,7 +285,9 @@ class _BoardPlane extends StatelessWidget {
       children: <Widget>[
         for (var row = 0; row < rows; row++) ...<Widget>[
           if (row > 0) const SizedBox(height: Geom.gapRow),
-          Expanded(child: _gridRow(row: row, cols: cols, cellAt: cellAt)),
+          Expanded(
+            child: _gridRow(row: row, cols: cols, cellAt: cellAt),
+          ),
         ],
       ],
     );
@@ -368,11 +368,12 @@ class _BoardCell extends ConsumerWidget {
       boardControllerProvider.select((s) => s.editing),
     );
     return PhraseTile(
-      // Cheap, and it makes the intent legible. The composite (board_id, row,
-      // col) primary key means slots never reorder and no State can leak across
-      // one, so this is the whole key policy: nothing else on this path gets a
-      // key, and never a GlobalKey.
-      key: ValueKey<(int, int)>((row, col)),
+      // A stable per-coordinate key. The composite (board_id, row, col) primary
+      // key means slots never reorder and no State can leak across one, so this
+      // is the whole key policy: nothing else on this path gets a key, and never
+      // a GlobalKey. The `slot_r_c` string form is what the verification suites
+      // (a11y geometry, the label-fit matrix) address a tile by.
+      key: ValueKey<String>('slot_${row}_$col'),
       row: row,
       col: col,
       tile: tile,

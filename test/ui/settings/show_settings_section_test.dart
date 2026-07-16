@@ -34,9 +34,11 @@ void main() {
     expect(find.text('$standingLineSettingLabel: on'), findsOneWidget);
     // Bright is the selected segment.
     expect(
-      tester.widget<SegmentedButton<ShowPolarity>>(
-        find.byType(SegmentedButton<ShowPolarity>),
-      ).selected,
+      tester
+          .widget<SegmentedButton<ShowPolarity>>(
+            find.byType(SegmentedButton<ShowPolarity>),
+          )
+          .selected,
       <ShowPolarity>{ShowPolarity.bright},
     );
   });
@@ -62,9 +64,11 @@ void main() {
       ),
     );
     expect(
-      tester.widget<SegmentedButton<ShowPolarity>>(
-        find.byType(SegmentedButton<ShowPolarity>),
-      ).selected,
+      tester
+          .widget<SegmentedButton<ShowPolarity>>(
+            find.byType(SegmentedButton<ShowPolarity>),
+          )
+          .selected,
       <ShowPolarity>{ShowPolarity.matchTheme},
     );
     expect(find.text('$standingLineSettingLabel: off'), findsOneWidget);

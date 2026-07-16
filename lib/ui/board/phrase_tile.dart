@@ -230,6 +230,12 @@ class PhraseTile extends StatelessWidget {
             builder: (context) {
               final focused = Focus.of(context).hasFocus;
               return GestureDetector(
+                // Pointer-only: the container Semantics above owns the tap
+                // action a screen reader activates, so this must NOT publish a
+                // second, UNLABELLED tappable node beside it — that duplicate is
+                // what labeledTapTargetGuideline (E10) flags, and a screen reader
+                // would see two targets where there is one tile.
+                excludeFromSemantics: true,
                 // The whole rect is the target, always — never the painted
                 // shape. Without this the inset around a short label is dead
                 // space, and a near-miss mid-shutdown is silence.

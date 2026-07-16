@@ -94,10 +94,7 @@ final class BoardExport {
     // base. Never re-encoded — media_store already downscales at IMPORT time, so
     // the stored bytes are the shippable ones. Only images referenced by a button
     // travel; an orphaned image row carries no phrase and no obligation.
-    final usedImageIds = buttons
-        .map((b) => b.imageId)
-        .whereType<int>()
-        .toSet();
+    final usedImageIds = buttons.map((b) => b.imageId).whereType<int>().toSet();
     for (final image in images.where((i) => usedImageIds.contains(i.id))) {
       _addBinaryFile(
         archive,
@@ -105,10 +102,7 @@ final class BoardExport {
         await _media.resolve(image.path).readAsBytes(),
       );
     }
-    final usedSoundIds = buttons
-        .map((b) => b.soundId)
-        .whereType<int>()
-        .toSet();
+    final usedSoundIds = buttons.map((b) => b.soundId).whereType<int>().toSet();
     for (final sound in sounds.where((s) => usedSoundIds.contains(s.id))) {
       _addBinaryFile(
         archive,

@@ -10,7 +10,8 @@ import 'package:offline_aac/data/board_repository.dart' show databaseProvider;
 import 'package:offline_aac/data/database/app_database.dart';
 import 'package:offline_aac/data/media_store.dart';
 import 'package:offline_aac/diagnostics/crash_log.dart';
-import 'package:offline_aac/ui/board/board_controller.dart' show crashLogProvider;
+import 'package:offline_aac/ui/board/board_controller.dart'
+    show crashLogProvider;
 import 'package:offline_aac/ui/settings/portability_controller.dart';
 import 'package:offline_aac/ui/settings/portability_io.dart';
 import 'package:offline_aac/ui/strings.dart';
@@ -59,21 +60,28 @@ void main() {
     staging: Directory(p.join(tmp.path, 'cache'))..createSync(),
   );
 
-  test('export clears the result line and hands a file to the share seam',
-      () async {
-    final io = fakeIo();
-    final c = containerWith(io);
+  test(
+    'export clears the result line and hands a file to the share seam',
+    () async {
+      final io = fakeIo();
+      final c = containerWith(io);
 
-    c.read(portabilityControllerProvider.notifier).exportBoard();
-    await pumpUntil(() => io.sharedBytes != null);
+      c.read(portabilityControllerProvider.notifier).exportBoard();
+      await pumpUntil(() => io.sharedBytes != null);
 
-    expect(io.sharedBytes, isNotNull, reason: 'the export reached the share seam');
-    expect(
-      c.read(portabilityControllerProvider),
-      isNull,
-      reason: 'the share sheet is the confirmation; no inline line on success',
-    );
-  });
+      expect(
+        io.sharedBytes,
+        isNotNull,
+        reason: 'the export reached the share seam',
+      );
+      expect(
+        c.read(portabilityControllerProvider),
+        isNull,
+        reason:
+            'the share sheet is the confirmation; no inline line on success',
+      );
+    },
+  );
 
   test('a cancelled import sets no message and makes no accusation', () async {
     final io = fakeIo()..picked = null; // user backed out of the picker
@@ -97,37 +105,41 @@ void main() {
     expect(c.read(portabilityControllerProvider), importOkResult);
   });
 
-  test('a malformed file maps to "not a Reed board" and leaks no phrase',
-      () async {
-    const phrase = "I need to leave, I'm not able to talk right now";
-    final malformed = File(p.join(tmp.path, 'bad.zip'))
-      ..writeAsBytesSync(_zipRaw('{ "name": "$phrase", broken'));
-    final io = fakeIo()..picked = malformed;
-    final c = containerWith(io);
+  test(
+    'a malformed file maps to "not a Reed board" and leaks no phrase',
+    () async {
+      const phrase = "I need to leave, I'm not able to talk right now";
+      final malformed = File(p.join(tmp.path, 'bad.zip'))
+        ..writeAsBytesSync(_zipRaw('{ "name": "$phrase", broken'));
+      final io = fakeIo()..picked = malformed;
+      final c = containerWith(io);
 
-    c.read(portabilityControllerProvider.notifier).importBoard();
-    await pumpUntil(() => c.read(portabilityControllerProvider) != null);
+      c.read(portabilityControllerProvider.notifier).importBoard();
+      await pumpUntil(() => c.read(portabilityControllerProvider) != null);
 
-    expect(c.read(portabilityControllerProvider), importNotReedResult);
-    expect(
-      logFile.existsSync() ? logFile.readAsStringSync() : '',
-      isNot(contains(phrase)),
-      reason: 'the file’s phrases never reach a log the user might mail out',
-    );
-  });
+      expect(c.read(portabilityControllerProvider), importNotReedResult);
+      expect(
+        logFile.existsSync() ? logFile.readAsStringSync() : '',
+        isNot(contains(phrase)),
+        reason: 'the file’s phrases never reach a log the user might mail out',
+      );
+    },
+  );
 
-  test('a newer-format file asks the user to update, not "not a Reed board"',
-      () async {
-    final newer = File(p.join(tmp.path, 'newer.zip'))
-      ..writeAsBytesSync(_zip(_validBoard(), formatVersion: 2));
-    final io = fakeIo()..picked = newer;
-    final c = containerWith(io);
+  test(
+    'a newer-format file asks the user to update, not "not a Reed board"',
+    () async {
+      final newer = File(p.join(tmp.path, 'newer.zip'))
+        ..writeAsBytesSync(_zip(_validBoard(), formatVersion: 2));
+      final io = fakeIo()..picked = newer;
+      final c = containerWith(io);
 
-    c.read(portabilityControllerProvider.notifier).importBoard();
-    await pumpUntil(() => c.read(portabilityControllerProvider) != null);
+      c.read(portabilityControllerProvider.notifier).importBoard();
+      await pumpUntil(() => c.read(portabilityControllerProvider) != null);
 
-    expect(c.read(portabilityControllerProvider), importNeedsNewerResult);
-  });
+      expect(c.read(portabilityControllerProvider), importNeedsNewerResult);
+    },
+  );
 }
 
 /// A fake for the platform edges, so the controller runs with no real share

@@ -63,7 +63,11 @@ void main() {
     // no label anywhere in the tree.
     tester.useDevice(Device.small);
     await tester.pumpApp(grid: grid);
-    expect(find.byType(PhraseTile), findsOneWidget, reason: 'the cell is there');
+    expect(
+      find.byType(PhraseTile),
+      findsOneWidget,
+      reason: 'the cell is there',
+    );
     expect(
       find.bySemanticsLabel(_fixtureTile(0, 0).label),
       findsNothing,

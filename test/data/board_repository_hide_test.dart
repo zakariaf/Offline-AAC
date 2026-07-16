@@ -46,18 +46,21 @@ void main() {
     return slot?.buttonId;
   }
 
-  test('hide sets hidden=1 and leaves the slot pointing at the button', () async {
-    final id = await nonSystemButtonId();
-    await repo.setHidden(id, hidden: true);
+  test(
+    'hide sets hidden=1 and leaves the slot pointing at the button',
+    () async {
+      final id = await nonSystemButtonId();
+      await repo.setHidden(id, hidden: true);
 
-    expect((await button(id)).hidden, isTrue);
-    expect(
-      await slotButtonFor(id),
-      id,
-      reason: 'the slot still points at the hidden button — hide is a flag',
-    );
-    expect((await button(id)).userEdited, isTrue);
-  });
+      expect((await button(id)).hidden, isTrue);
+      expect(
+        await slotButtonFor(id),
+        id,
+        reason: 'the slot still points at the hidden button — hide is a flag',
+      );
+      expect((await button(id)).userEdited, isTrue);
+    },
+  );
 
   test('unhide restores it with a single flag flip', () async {
     final id = await nonSystemButtonId();
@@ -74,7 +77,11 @@ void main() {
     expect(() => repo.setHidden(id, hidden: true), throwsStateError);
 
     final after = await button(id);
-    expect(after.hidden, before.hidden, reason: 'the system phrase is untouched');
+    expect(
+      after.hidden,
+      before.hidden,
+      reason: 'the system phrase is untouched',
+    );
     expect(after.hidden, isFalse);
   });
 }

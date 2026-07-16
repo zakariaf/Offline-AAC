@@ -97,13 +97,18 @@ void main() {
     expect(scaled, greaterThan(base * 1.8));
   });
 
-  testWidgets('a 20-character label shows an announced counter', (tester) async {
+  testWidgets('a 20-character label shows an announced counter', (
+    tester,
+  ) async {
     tester.useDevice(Device.small);
     await tester.pumpApp(editing: true);
     await tester.tap(tileAt(0, 0));
     await tester.pump();
 
-    await tester.enterText(find.byType(TextField).first, '12345678901234567890');
+    await tester.enterText(
+      find.byType(TextField).first,
+      '12345678901234567890',
+    );
     await tester.pump();
     // The cap is 16; the count is stated plainly, in a live region, not a red
     // alarm. The field holds 16, the counter says so — never a silent truncate.

@@ -58,3 +58,28 @@ BoardGrid fixtureGrid({(int, int)? emptyAt}) {
   }
   return BoardGrid(boardId: 1, rows: 4, cols: 3, tiles: tiles);
 }
+
+/// The six-tile large layout: a 3x2 board of the six highest-priority phrases.
+///
+/// At 200% a 20pt label becomes 40pt and twelve tiles arithmetically cannot
+/// render on a phone; the 6-tile layout is a legitimate resolution, and the scale
+/// matrix must run against it too so it never becomes the escape hatch nobody
+/// tests. Carries the 16-character 'Give me a minute' so the worst case is real.
+BoardGrid fixtureGrid6() {
+  final six = kByPriority.take(6).toList();
+  final tiles = <Tile?>[
+    for (var i = 0; i < 6; i++)
+      Tile(
+        buttonId: six[i].buttonId,
+        row: i ~/ 2,
+        col: i % 2,
+        label: six[i].label,
+        vocalization: six[i].vocalization,
+        displayText: six[i].displayText,
+        hidden: false,
+        isSystem: false,
+        priority: six[i].priority,
+      ),
+  ];
+  return BoardGrid(boardId: 1, rows: 3, cols: 2, tiles: tiles);
+}

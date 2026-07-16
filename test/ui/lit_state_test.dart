@@ -135,7 +135,9 @@ void main() {
       '${Directory.systemTemp.createTempSync('reed_lit').path}/crash_log.txt',
     );
     addTearDown(() {
-      if (logFile.parent.existsSync()) logFile.parent.deleteSync(recursive: true);
+      if (logFile.parent.existsSync()) {
+        logFile.parent.deleteSync(recursive: true);
+      }
     });
 
     final speech = FakeSpeechService(hangSpeak: true);
@@ -176,7 +178,11 @@ void main() {
     await tester.pump();
 
     expect(litValue(tester, first), isEmpty, reason: 'the old tile goes dark');
-    expect(litValue(tester, second), kSpeakingValue, reason: 'the new tile lit');
+    expect(
+      litValue(tester, second),
+      kSpeakingValue,
+      reason: 'the new tile lit',
+    );
   });
 
   testWidgets('a tap schedules no animation frame', (tester) async {
@@ -191,7 +197,8 @@ void main() {
     expect(
       tester.binding.hasScheduledFrame,
       isFalse,
-      reason: 'lighting "${first.label}" scheduled a frame — something animates',
+      reason:
+          'lighting "${first.label}" scheduled a frame — something animates',
     );
   });
 }

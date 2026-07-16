@@ -30,23 +30,34 @@ void main() {
 
   test('saving any edit sets user_edited to 1', () async {
     final id = await firstButtonId();
-    expect((await rawButton(id)).userEdited, isFalse, reason: 'seed is unedited');
+    expect(
+      (await rawButton(id)).userEdited,
+      isFalse,
+      reason: 'seed is unedited',
+    );
 
     await repo.editTileText(id, label: 'Mine now');
     expect((await rawButton(id)).userEdited, isTrue);
   });
 
-  test('saving with "What it says" never opened writes vocalization NULL', () async {
-    // NULL, not a copy of the label: the schema falls back to the label, so a
-    // later label edit never strands a stale sentence the tile still speaks.
-    final id = await firstButtonId();
-    await repo.editTileText(id, label: 'Hello');
-    expect((await rawButton(id)).vocalization, isNull);
-  });
+  test(
+    'saving with "What it says" never opened writes vocalization NULL',
+    () async {
+      // NULL, not a copy of the label: the schema falls back to the label, so a
+      // later label edit never strands a stale sentence the tile still speaks.
+      final id = await firstButtonId();
+      await repo.editTileText(id, label: 'Hello');
+      expect((await rawButton(id)).vocalization, isNull);
+    },
+  );
 
   test('an opened "What it says" is written for real', () async {
     final id = await firstButtonId();
-    await repo.editTileText(id, label: 'Hi', vocalization: 'Hello there, friend');
+    await repo.editTileText(
+      id,
+      label: 'Hi',
+      vocalization: 'Hello there, friend',
+    );
     expect((await rawButton(id)).vocalization, 'Hello there, friend');
   });
 
@@ -63,22 +74,28 @@ void main() {
     expect(row.label.contains("'"), isFalse);
   });
 
-  test('nothing else is transformed — no case change, no appended period', () async {
-    final id = await firstButtonId();
-    await repo.editTileText(id, label: 'wtf no', vocalization: 'wtf no');
-    final row = await rawButton(id);
-    expect(row.label, 'wtf no');
-    expect(row.vocalization, 'wtf no');
-  });
+  test(
+    'nothing else is transformed — no case change, no appended period',
+    () async {
+      final id = await firstButtonId();
+      await repo.editTileText(id, label: 'wtf no', vocalization: 'wtf no');
+      final row = await rawButton(id);
+      expect(row.label, 'wtf no');
+      expect(row.vocalization, 'wtf no');
+    },
+  );
 
-  test('profanity saves unchanged, with no filter and no confirmation', () async {
-    // Filtering a disabled person's own speech is the paternalism this product
-    // exists to oppose. The repository stores exactly what it is given.
-    final id = await firstButtonId();
-    const blunt = 'piss off';
-    await repo.editTileText(id, label: blunt);
-    expect((await rawButton(id)).label, blunt);
-  });
+  test(
+    'profanity saves unchanged, with no filter and no confirmation',
+    () async {
+      // Filtering a disabled person's own speech is the paternalism this product
+      // exists to oppose. The repository stores exactly what it is given.
+      final id = await firstButtonId();
+      const blunt = 'piss off';
+      await repo.editTileText(id, label: blunt);
+      expect((await rawButton(id)).label, blunt);
+    },
+  );
 
   test('the 17th label character is refused at the boundary', () async {
     // 17 chars must not persist — the repository is the last line if the field
@@ -92,22 +109,34 @@ void main() {
     expect((await rawButton(id)).label.length, lessThanOrEqualTo(16));
   });
 
-  test('a default-set pass that filters user_edited=0 leaves an edited row intact',
-      () async {
-    // The hard stop lives in the WHERE clause of any default-content path, and
-    // this is the shape that path must take. An edited row is byte-identical
-    // after it runs; an unedited row is fair game.
-    final id = await firstButtonId();
-    await repo.editTileText(id, label: 'Curated', vocalization: 'My own words');
-    final before = await rawButton(id);
+  test(
+    'a default-set pass that filters user_edited=0 leaves an edited row intact',
+    () async {
+      // The hard stop lives in the WHERE clause of any default-content path, and
+      // this is the shape that path must take. An edited row is byte-identical
+      // after it runs; an unedited row is fair game.
+      final id = await firstButtonId();
+      await repo.editTileText(
+        id,
+        label: 'Curated',
+        vocalization: 'My own words',
+      );
+      final before = await rawButton(id);
 
-    // Simulate the ONLY safe default-set update: WHERE user_edited = 0.
-    await (db.update(db.buttons)..where((b) => b.userEdited.equals(false))).write(
-      const ButtonsCompanion(label: Value<String>('DEFAULT')),
-    );
+      // Simulate the ONLY safe default-set update: WHERE user_edited = 0.
+      await (db.update(
+        db.buttons,
+      )..where((b) => b.userEdited.equals(false))).write(
+        const ButtonsCompanion(label: Value<String>('DEFAULT')),
+      );
 
-    final after = await rawButton(id);
-    expect(after.label, before.label, reason: 'the edited phrase is untouched');
-    expect(after.vocalization, before.vocalization);
-  });
+      final after = await rawButton(id);
+      expect(
+        after.label,
+        before.label,
+        reason: 'the edited phrase is untouched',
+      );
+      expect(after.vocalization, before.vocalization);
+    },
+  );
 }

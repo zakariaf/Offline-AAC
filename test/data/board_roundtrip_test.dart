@@ -26,8 +26,12 @@ void main() {
 
   setUp(() {
     tmp = Directory.systemTemp.createTempSync('reed_roundtrip');
-    sourceMedia = MediaStore(Directory(p.join(tmp.path, 'source_docs'))..createSync());
-    targetMedia = MediaStore(Directory(p.join(tmp.path, 'target_docs'))..createSync());
+    sourceMedia = MediaStore(
+      Directory(p.join(tmp.path, 'source_docs'))..createSync(),
+    );
+    targetMedia = MediaStore(
+      Directory(p.join(tmp.path, 'target_docs'))..createSync(),
+    );
   });
   tearDown(() => tmp.deleteSync(recursive: true));
 
@@ -36,10 +40,8 @@ void main() {
   /// written under the documents directory.
   Future<Uint8List> exportBytes(AppDatabase db, MediaStore media) async {
     final staging = Directory(p.join(tmp.path, 'cache'))..createSync();
-    Set<String> docFiles() => media.documentsDir
-        .listSync(recursive: true)
-        .map((e) => e.path)
-        .toSet();
+    Set<String> docFiles() =>
+        media.documentsDir.listSync(recursive: true).map((e) => e.path).toSet();
     final docsBefore = docFiles();
 
     Uint8List? captured;
@@ -62,7 +64,8 @@ void main() {
     expect(
       docFiles(),
       docsBefore,
-      reason: 'export writes NOTHING new under documents — that is where the DB '
+      reason:
+          'export writes NOTHING new under documents — that is where the DB '
           'lives; it stages in cache and copies media out, never in',
     );
     return captured!;
@@ -107,8 +110,16 @@ void main() {
       // Text byte-identical, all three fields, distinct per button so a swap
       // cannot pass. Then the flags that make a phrase the user's.
       expect(now!.label, was.label, reason: 'label at $coord');
-      expect(now.vocalization, was.vocalization, reason: 'vocalization at $coord');
-      expect(now.displayText, was.displayText, reason: 'display_text at $coord');
+      expect(
+        now.vocalization,
+        was.vocalization,
+        reason: 'vocalization at $coord',
+      );
+      expect(
+        now.displayText,
+        was.displayText,
+        reason: 'display_text at $coord',
+      );
       expect(now.hidden, was.hidden, reason: 'hidden at $coord');
       expect(now.userEdited, was.userEdited, reason: 'user_edited at $coord');
       expect(now.isSystem, was.isSystem, reason: 'is_system at $coord');
@@ -118,29 +129,33 @@ void main() {
     await target.close();
   });
 
-  test('a null vocalization stays null — the fallback is not resolved', () async {
-    final source = AppDatabase.forTesting(NativeDatabase.memory());
-    await _wipe(source);
-    final built = await _buildSource(source);
-    final bytes = await exportBytes(source, sourceMedia);
-    await source.close();
+  test(
+    'a null vocalization stays null — the fallback is not resolved',
+    () async {
+      final source = AppDatabase.forTesting(NativeDatabase.memory());
+      await _wipe(source);
+      final built = await _buildSource(source);
+      final bytes = await exportBytes(source, sourceMedia);
+      await source.close();
 
-    final target = AppDatabase.forTesting(NativeDatabase.memory());
-    await BoardImport(target, targetMedia).importBytes(bytes);
+      final target = AppDatabase.forTesting(NativeDatabase.memory());
+      await BoardImport(target, targetMedia).importBytes(bytes);
 
-    final importedRoot = await _rootBoard(target);
-    final after = await _snapshot(target, importedRoot.id);
-    final nullVocCell = after[built.nullVocalizationCoord]!;
-    expect(
-      nullVocCell.vocalization,
-      isNull,
-      reason: 'null means "fall back to label"; resolving it at export ships a '
-          'different utterance',
-    );
-    expect(nullVocCell.label, isNotEmpty);
+      final importedRoot = await _rootBoard(target);
+      final after = await _snapshot(target, importedRoot.id);
+      final nullVocCell = after[built.nullVocalizationCoord]!;
+      expect(
+        nullVocCell.vocalization,
+        isNull,
+        reason:
+            'null means "fall back to label"; resolving it at export ships a '
+            'different utterance',
+      );
+      expect(nullVocCell.label, isNotEmpty);
 
-    await target.close();
-  });
+      await target.close();
+    },
+  );
 
   test('foreign keys are on and hold after import', () async {
     final source = AppDatabase.forTesting(NativeDatabase.memory());
@@ -152,10 +167,12 @@ void main() {
     final target = AppDatabase.forTesting(NativeDatabase.memory());
     await BoardImport(target, targetMedia).importBytes(bytes);
 
-    final fkOn = await target
-        .customSelect('PRAGMA foreign_keys')
-        .getSingle();
-    expect(fkOn.data.values.first, 1, reason: 'FKs off silently accept dangling refs');
+    final fkOn = await target.customSelect('PRAGMA foreign_keys').getSingle();
+    expect(
+      fkOn.data.values.first,
+      1,
+      reason: 'FKs off silently accept dangling refs',
+    );
 
     final violations = await target
         .customSelect('PRAGMA foreign_key_check')
@@ -181,8 +198,9 @@ void main() {
     final target = AppDatabase.forTesting(NativeDatabase.memory());
     // The board the user already has, with a tile they have touched.
     final existingRoot = await _rootBoard(target);
-    final aButton = (await target.select(target.buttons).get())
-        .firstWhere((b) => !b.isSystem);
+    final aButton = (await target.select(target.buttons).get()).firstWhere(
+      (b) => !b.isSystem,
+    );
     await (target.update(target.buttons)..where((b) => b.id.equals(aButton.id)))
         .write(const ButtonsCompanion(userEdited: Value(true)));
     final oldBoardBefore = await _fullRows(target, existingRoot.id);
@@ -242,15 +260,17 @@ void main() {
       sourceMedia.imageRelativePath(1, 'jpg'),
       imageBytes,
     );
-    final imageId = await source.into(source.images).insert(
-      ImagesCompanion.insert(
-        path: relative,
-        contentType: 'image/jpeg',
-        width: 512,
-        height: 384,
-        attribution: const Value('CC-BY someone'),
-      ),
-    );
+    final imageId = await source
+        .into(source.images)
+        .insert(
+          ImagesCompanion.insert(
+            path: relative,
+            contentType: 'image/jpeg',
+            width: 512,
+            height: 384,
+            attribution: const Value('CC-BY someone'),
+          ),
+        );
     await (source.update(source.buttons)
           ..where((b) => b.id.equals(built.firstButtonId)))
         .write(ButtonsCompanion(imageId: Value(imageId)));
@@ -264,7 +284,11 @@ void main() {
     final rows = await target.select(target.images).get();
     expect(rows, hasLength(1));
     final row = rows.single;
-    expect(p.isAbsolute(row.path), isFalse, reason: 'an absolute path dies on restore');
+    expect(
+      p.isAbsolute(row.path),
+      isFalse,
+      reason: 'an absolute path dies on restore',
+    );
     expect(row.path, isNot(contains(tmp.path)));
     expect(
       row.path.toLowerCase(),
@@ -275,7 +299,11 @@ void main() {
     final resolved = targetMedia.resolve(row.path);
     expect(resolved.existsSync(), isTrue);
     expect(await resolved.readAsBytes(), imageBytes);
-    expect(row.attribution, 'CC-BY someone', reason: 'attribution travels or it is a licence violation');
+    expect(
+      row.attribution,
+      'CC-BY someone',
+      reason: 'attribution travels or it is a licence violation',
+    );
 
     await target.close();
   });
@@ -301,14 +329,16 @@ class _Built {
 Future<_Built> _buildSource(AppDatabase db) async {
   const rows = 3;
   const cols = 4;
-  final boardId = await db.into(db.boards).insert(
-    BoardsCompanion.insert(
-      name: 'exported board',
-      gridRows: rows,
-      gridCols: cols,
-      isRoot: const Value(true),
-    ),
-  );
+  final boardId = await db
+      .into(db.boards)
+      .insert(
+        BoardsCompanion.insert(
+          name: 'exported board',
+          gridRows: rows,
+          gridCols: cols,
+          isRoot: const Value(true),
+        ),
+      );
 
   // The troublesome fixture: curly apostrophe, ellipsis, em dash, emoji, and a
   // literal newline break hint. Three DISTINCT strings so a field swap fails.
@@ -320,42 +350,50 @@ Future<_Built> _buildSource(AppDatabase db) async {
   for (var i = 0; i < rows * cols; i++) {
     final isTorture = i == 0;
     final isNullVoc = i == 5;
-    final id = await db.into(db.buttons).insert(
-      ButtonsCompanion.insert(
-        boardId: boardId,
-        label: isTorture ? tortureLabel : 'L$i',
-        vocalization: isNullVoc
-            ? const Value<String?>(null)
-            : Value<String?>(isTorture ? tortureVoc : 'V$i'),
-        displayText: Value<String?>(isTorture ? tortureDisplay : 'D$i'),
-        userEdited: Value(i.isEven),
-        priority: Value(1000 + i),
-      ),
-    );
+    final id = await db
+        .into(db.buttons)
+        .insert(
+          ButtonsCompanion.insert(
+            boardId: boardId,
+            label: isTorture ? tortureLabel : 'L$i',
+            vocalization: isNullVoc
+                ? const Value<String?>(null)
+                : Value<String?>(isTorture ? tortureVoc : 'V$i'),
+            displayText: Value<String?>(isTorture ? tortureDisplay : 'D$i'),
+            userEdited: Value(i.isEven),
+            priority: Value(1000 + i),
+          ),
+        );
     buttonAtCell.add(id);
   }
 
   // Slots for every cell, pointing at its button.
   for (var i = 0; i < rows * cols; i++) {
-    await db.into(db.gridSlots).insert(
-      GridSlotsCompanion.insert(
-        boardId: boardId,
-        rowIndex: i ~/ cols,
-        colIndex: i % cols,
-        buttonId: Value(buttonAtCell[i]),
-      ),
-    );
+    await db
+        .into(db.gridSlots)
+        .insert(
+          GridSlotsCompanion.insert(
+            boardId: boardId,
+            rowIndex: i ~/ cols,
+            colIndex: i % cols,
+            buttonId: Value(buttonAtCell[i]),
+          ),
+        );
   }
 
   // Empty two slots by deleting their buttons — FK setNull leaves the slot in
   // place with button_id NULL.
   for (final cell in <int>[7, 10]) {
-    await (db.delete(db.buttons)..where((b) => b.id.equals(buttonAtCell[cell])))
-        .go();
+    await (db.delete(
+      db.buttons,
+    )..where((b) => b.id.equals(buttonAtCell[cell]))).go();
   }
   // Hide one button that is still placed.
-  await (db.update(db.buttons)..where((b) => b.id.equals(buttonAtCell[3])))
-      .write(const ButtonsCompanion(hidden: Value(true), userEdited: Value(true)));
+  await (db.update(
+    db.buttons,
+  )..where((b) => b.id.equals(buttonAtCell[3]))).write(
+    const ButtonsCompanion(hidden: Value(true), userEdited: Value(true)),
+  );
 
   return _Built(
     boardId: boardId,
@@ -388,13 +426,13 @@ class _Cell {
 /// Every coordinate of [boardId] mapped to its button's fields, or null for an
 /// empty slot.
 Future<Map<(int, int), _Cell?>> _snapshot(AppDatabase db, int boardId) async {
-  final slots = await (db.select(db.gridSlots)
-        ..where((s) => s.boardId.equals(boardId)))
-      .get();
+  final slots = await (db.select(
+    db.gridSlots,
+  )..where((s) => s.boardId.equals(boardId))).get();
   final buttons = <int, Button>{
-    for (final b in await (db.select(db.buttons)
-              ..where((b) => b.boardId.equals(boardId)))
-            .get())
+    for (final b in await (db.select(
+      db.buttons,
+    )..where((b) => b.boardId.equals(boardId))).get())
       b.id: b,
   };
   final out = <(int, int), _Cell?>{};
@@ -428,17 +466,23 @@ class _FullRows {
 }
 
 Future<_FullRows> _fullRows(AppDatabase db, int boardId) async {
-  final board = await (db.select(db.boards)..where((b) => b.id.equals(boardId)))
-      .getSingle();
+  final board = await (db.select(
+    db.boards,
+  )..where((b) => b.id.equals(boardId))).getSingle();
   final buttons =
-      await (db.select(db.buttons)..where((b) => b.boardId.equals(boardId))).get()
+      await (db.select(
+          db.buttons,
+        )..where((b) => b.boardId.equals(boardId))).get()
         ..sort((a, b) => a.id.compareTo(b.id));
   final slots =
-      await (db.select(db.gridSlots)..where((s) => s.boardId.equals(boardId)))
-          .get()
-        ..sort((a, b) => a.rowIndex == b.rowIndex
-            ? a.colIndex.compareTo(b.colIndex)
-            : a.rowIndex.compareTo(b.rowIndex));
+      await (db.select(
+          db.gridSlots,
+        )..where((s) => s.boardId.equals(boardId))).get()
+        ..sort(
+          (a, b) => a.rowIndex == b.rowIndex
+              ? a.colIndex.compareTo(b.colIndex)
+              : a.rowIndex.compareTo(b.rowIndex),
+        );
   return _FullRows(board: board, buttons: buttons, slots: slots);
 }
 

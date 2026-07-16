@@ -10,7 +10,11 @@ import 'policy_helpers.dart';
 void main() {
   const settingsDir = 'lib/ui/settings';
 
-  void expectAbsent(List<String> needles, {required String why, String dir = settingsDir}) {
+  void expectAbsent(
+    List<String> needles, {
+    required String why,
+    String dir = settingsDir,
+  }) {
     final offenders = <String>[];
     for (final file in dartFilesUnder(dir)) {
       final code = stripComments(file.readAsStringSync());
@@ -23,8 +27,15 @@ void main() {
 
   test('no dialog, sheet, or second settings level', () {
     expectAbsent(
-      <String>['showDialog', 'AlertDialog', 'SimpleDialog', 'BottomSheet', 'ExpansionTile'],
-      why: 'errors and choices are inline; a modal blocks the one screen they '
+      <String>[
+        'showDialog',
+        'AlertDialog',
+        'SimpleDialog',
+        'BottomSheet',
+        'ExpansionTile',
+      ],
+      why:
+          'errors and choices are inline; a modal blocks the one screen they '
           'opened to use',
     );
   });
@@ -39,7 +50,8 @@ void main() {
   test('the voice picker talks to SpeechService only, never flutter_tts', () {
     expectAbsent(
       <String>['package:flutter_tts'],
-      why: 'flutter_tts direct bypasses the setVoice check and the timeout — '
+      why:
+          'flutter_tts direct bypasses the setVoice check and the timeout — '
           'the picker would become the one screen a silent failure reports '
           'success',
     );

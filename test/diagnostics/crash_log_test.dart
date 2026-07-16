@@ -53,13 +53,15 @@ void main() {
       expect(
         logged,
         contains('engine rejected'),
-        reason: 'the failure must be recorded — an empty file would pass the '
+        reason:
+            'the failure must be recorded — an empty file would pass the '
             'no-phrase assertion trivially',
       );
       expect(
         logged.contains(phrase),
         isFalse,
-        reason: 'logLine carries engine facts only; spokenText never reaches '
+        reason:
+            'logLine carries engine facts only; spokenText never reaches '
             'record()',
       );
       // The characters of the phrase, not just the whole string: a partial leak
@@ -87,7 +89,8 @@ void main() {
       expect(
         logged.contains(phrase),
         isFalse,
-        reason: 'the phrase must be scrubbed even though the call site '
+        reason:
+            'the phrase must be scrubbed even though the call site '
             'interpolated an exception — redaction lives in record(), not at '
             'the call site',
       );
@@ -122,7 +125,8 @@ void main() {
     expect(
       logFile.readAsStringSync(),
       contains('startup crash before first frame'),
-      reason: 'record() must flush synchronously; a buffered write loses '
+      reason:
+          'record() must flush synchronously; a buffered write loses '
           'exactly the crash you needed',
     );
   });
@@ -147,7 +151,8 @@ void main() {
     expect(
       size,
       lessThanOrEqualTo(64 * 1024),
-      reason: 'nothing watches a user disk fill; the log is bounded on every '
+      reason:
+          'nothing watches a user disk fill; the log is bounded on every '
           'write',
     );
     final logged = bytes();
@@ -159,7 +164,8 @@ void main() {
     expect(
       logged.contains(first),
       isFalse,
-      reason: 'the oldest entries are dropped from the FRONT; keeping them and '
+      reason:
+          'the oldest entries are dropped from the FRONT; keeping them and '
           'losing the newest is the wrong-end trim',
     );
   });
@@ -176,7 +182,10 @@ void main() {
     // in production, is FlutterError.onError — where a throw re-enters the
     // handler and recurses until the app dies.
     expect(
-      () => log.record('a crash while the disk is unwritable', StackTrace.current),
+      () => log.record(
+        'a crash while the disk is unwritable',
+        StackTrace.current,
+      ),
       returnsNormally,
     );
     expect(
@@ -199,12 +208,14 @@ void main() {
       expect(
         logged,
         contains('the real cause: DB open failed at v2'),
-        reason: 'Riverpod wraps provider failures; the log must carry the cause',
+        reason:
+            'Riverpod wraps provider failures; the log must carry the cause',
       );
       expect(
         logged.contains('ProviderException'),
         isFalse,
-        reason: 'logging the wrapper flattens every entry to the same useless '
+        reason:
+            'logging the wrapper flattens every entry to the same useless '
             'line and destroys the only diagnostic there is',
       );
     });

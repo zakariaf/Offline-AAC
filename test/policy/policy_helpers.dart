@@ -122,8 +122,9 @@ String stripComments(String source) {
 /// A missing file returns the empty string rather than throwing, so a deleted
 /// resource FAILS the assertion that expects its content instead of blowing up
 /// the whole test file with a `FileSystemException`.
-String xmlOf(File file) =>
-    file.existsSync() ? file.readAsStringSync().replaceAll(_xmlComment, '') : '';
+String xmlOf(File file) => file.existsSync()
+    ? file.readAsStringSync().replaceAll(_xmlComment, '')
+    : '';
 
 final RegExp _xmlComment = RegExp('<!--.*?-->', dotAll: true);
 
@@ -133,10 +134,10 @@ final RegExp _xmlComment = RegExp('<!--.*?-->', dotAll: true);
 /// Anchors an assertion to a specific element: "does `<cloud-backup>` contain an
 /// `<include>`" is a different, and correct, question from "does the file
 /// contain an `<include>` anywhere".
-String? xmlElement(String xml, String tag) =>
-    RegExp('<$tag(?:\\s[^>]*)?>(.*?)</$tag>', dotAll: true)
-        .firstMatch(xml)
-        ?.group(1);
+String? xmlElement(String xml, String tag) => RegExp(
+  '<$tag(?:\\s[^>]*)?>(.*?)</$tag>',
+  dotAll: true,
+).firstMatch(xml)?.group(1);
 
 /// `file:line` for every line of [source] matching [pattern], 1-indexed.
 ///

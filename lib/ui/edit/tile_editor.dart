@@ -121,8 +121,7 @@ class _TileEditorState extends ConsumerState<TileEditor> {
     }
   }
 
-  void _cancel() =>
-      ref.read(boardControllerProvider.notifier).closeEditor();
+  void _cancel() => ref.read(boardControllerProvider.notifier).closeEditor();
 
   @override
   Widget build(BuildContext context) {

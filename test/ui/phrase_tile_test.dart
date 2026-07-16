@@ -192,7 +192,8 @@ void main() {
       expect(
         find.bySemanticsLabel('Remove ${system.label}'),
         findsNothing,
-        reason: 'the repair phrase is undeletable — no control at all, not a '
+        reason:
+            'the repair phrase is undeletable — no control at all, not a '
             'disabled one',
       );
     });

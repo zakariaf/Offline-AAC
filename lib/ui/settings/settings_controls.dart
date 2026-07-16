@@ -150,9 +150,11 @@ class TileCountControl extends ConsumerWidget {
     final is12 = gridSize == GridSize.phone;
     return SettingsRow(
       semanticLabel: 'Tiles: ${is12 ? '12' : '6'}. Tap to change.',
-      onTap: () => ref.read(settingsProvider.notifier).setGridSize(
-        is12 ? GridSize.large : GridSize.phone,
-      ),
+      onTap: () => ref
+          .read(settingsProvider.notifier)
+          .setGridSize(
+            is12 ? GridSize.large : GridSize.phone,
+          ),
       child: _ValueFace(
         prefix: 'Tiles:',
         options: const <String>['12', '6'],
@@ -172,8 +174,7 @@ class HapticsControl extends ConsumerWidget {
     final on = ref.watch(settingsProvider.select((s) => s.haptics));
     return SettingsRow(
       semanticLabel: 'Haptics: ${on ? 'on' : 'off'}. Tap to change.',
-      onTap: () =>
-          ref.read(settingsProvider.notifier).setHaptics(enabled: !on),
+      onTap: () => ref.read(settingsProvider.notifier).setHaptics(enabled: !on),
       child: _TextFace(on ? hapticsOnChrome : hapticsOffChrome),
     );
   }
@@ -246,9 +247,11 @@ class HcPolarityControl extends ConsumerWidget {
     return SettingsRow(
       semanticLabel:
           'High contrast: ${isDark ? 'dark' : 'light'}. Tap to change.',
-      onTap: () => ref.read(settingsProvider.notifier).setHcPolarity(
-        isDark ? AacPalette.hcPaper : AacPalette.hcInk,
-      ),
+      onTap: () => ref
+          .read(settingsProvider.notifier)
+          .setHcPolarity(
+            isDark ? AacPalette.hcPaper : AacPalette.hcInk,
+          ),
       child: _ValueFace(
         prefix: 'High contrast:',
         options: const <String>['dark', 'light'],
@@ -411,7 +414,9 @@ class ThemeChrome extends ConsumerWidget {
       label: 'theme: $chrome',
       onTap: () {
         ref.read(paletteProvider.notifier).cycle();
-        ref.read(settingsProvider.notifier).setPalette(ref.read(paletteProvider));
+        ref
+            .read(settingsProvider.notifier)
+            .setPalette(ref.read(paletteProvider));
       },
     );
   }

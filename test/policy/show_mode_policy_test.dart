@@ -114,7 +114,8 @@ void main() {
     expect(
       offenders,
       isEmpty,
-      reason: 'the poster colours live in the tokens file:\n${offenders.join('\n')}',
+      reason:
+          'the poster colours live in the tokens file:\n${offenders.join('\n')}',
     );
   });
 }

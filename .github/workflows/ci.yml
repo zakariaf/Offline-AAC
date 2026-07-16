@@ -85,6 +85,20 @@ jobs:
           dart pub deps --json > /tmp/deps.json
           python3 .claude/skills/reed-dependency-hygiene/scripts/audit_deps.py /tmp/deps.json
 
+      - name: Design — no colour literal outside the token file
+        # Every Color(0x…) lives in lib/ui/core/tokens.dart; a literal in a widget
+        # file is a finding even when the hex is correct — it is how the palette
+        # drifts out of one place. This is the decidable half of the visual audit.
+        # The full 20-tell audit-visuals.sh is a MANUAL pre-ship review, not a hard
+        # gate: it raw-greps this codebase's own anti-pattern DOCUMENTATION and its
+        # established icon-in-chrome design, so it cannot exit 0 here without
+        # suppressing docs. See docs/design-audit.md for the recorded verdict.
+        run: |
+          if grep -rn 'Color(0x' lib/ --include='*.dart' | grep -v 'lib/ui/core/tokens.dart'; then
+            echo "A colour literal escaped tokens.dart — see docs/design-audit.md"
+            exit 1
+          fi
+
       - name: Test
         run: flutter test --coverage
 

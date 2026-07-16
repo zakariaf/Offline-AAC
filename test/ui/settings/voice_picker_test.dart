@@ -63,7 +63,12 @@ void main() {
 
     expect(
       tester.getSemantics(find.bySemanticsLabel('v')),
-      isSemantics(isButton: true, label: 'v', hasCheckedState: true, isChecked: true),
+      isSemantics(
+        isButton: true,
+        label: 'v',
+        hasCheckedState: true,
+        isChecked: true,
+      ),
       reason: 'selection is exposed through semantics, not colour alone',
     );
   });

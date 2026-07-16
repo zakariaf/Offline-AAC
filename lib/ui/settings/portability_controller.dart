@@ -6,7 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:offline_aac/data/board_export.dart';
 import 'package:offline_aac/data/board_import.dart';
 import 'package:offline_aac/data/board_repository.dart' show databaseProvider;
-import 'package:offline_aac/ui/board/board_controller.dart' show crashLogProvider;
+import 'package:offline_aac/ui/board/board_controller.dart'
+    show crashLogProvider;
 import 'package:offline_aac/ui/settings/portability_io.dart';
 import 'package:offline_aac/ui/strings.dart';
 import 'package:sqlite3/common.dart' show SqliteException;

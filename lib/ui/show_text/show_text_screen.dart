@@ -54,8 +54,9 @@ class ShowTextScreen extends ConsumerWidget {
     // Off OR empty both mean "no line" — and an empty line is a deliberate,
     // honoured choice, not invalid input. Either way the widget is not built,
     // so it reserves no line box and the fitter gets the full height back.
-    final standingText =
-        settings.standingLineEnabled ? settings.standingLineText : '';
+    final standingText = settings.standingLineEnabled
+        ? settings.standingLineText
+        : '';
     final hasStanding = standingText.isNotEmpty;
 
     return Semantics(
@@ -97,7 +98,9 @@ class ShowTextScreen extends ConsumerWidget {
                   // standing line and the gap took, the poster fits into what is
                   // left, measured rather than assumed. Off ⇒ the poster gets the
                   // full column height.
-                  Expanded(child: _Poster(says: says, ink: ink)),
+                  Expanded(
+                    child: _Poster(says: says, ink: ink),
+                  ),
                 ],
               ),
             ),

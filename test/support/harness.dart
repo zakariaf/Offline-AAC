@@ -69,6 +69,7 @@ extension AacHarness on WidgetTester {
     AacPalette palette = AacPalette.ink,
     CrashLog? crashLog,
     bool editing = false,
+    bool accessibleNavigation = false,
   }) async {
     // CrashLog is no longer const-constructible (it holds a mutable redaction
     // source), so a `const CrashLog.discard()` default is out; resolve the
@@ -111,6 +112,7 @@ extension AacHarness on WidgetTester {
           data: MediaQueryData(
             textScaler: TextScaler.linear(textScale),
             boldText: boldText,
+            accessibleNavigation: accessibleNavigation,
           ),
           child: const ReedApp(),
         ),

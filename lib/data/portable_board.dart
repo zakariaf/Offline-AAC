@@ -297,18 +297,22 @@ final class PortableBoard {
     if (raw is! List) {
       throw const FormatException('grid.order is absent or not an array');
     }
-    return raw.map((row) {
-      if (row is! List) {
-        throw const FormatException('a grid.order row is not an array');
-      }
-      return row.map((cell) {
-        if (cell == null) return null;
-        if (cell is int) return cell;
-        throw const FormatException(
-          'a grid.order cell is neither an int nor null',
-        );
-      }).toList(growable: false);
-    }).toList(growable: false);
+    return raw
+        .map((row) {
+          if (row is! List) {
+            throw const FormatException('a grid.order row is not an array');
+          }
+          return row
+              .map((cell) {
+                if (cell == null) return null;
+                if (cell is int) return cell;
+                throw const FormatException(
+                  'a grid.order cell is neither an int nor null',
+                );
+              })
+              .toList(growable: false);
+        })
+        .toList(growable: false);
   }
 }
 

@@ -39,7 +39,9 @@ void main() {
     });
 
     test('off: it is the stored preference, untouched', () {
-      final s = const ReedSettings.defaults().copyWith(gridSize: GridSize.phone);
+      final s = const ReedSettings.defaults().copyWith(
+        gridSize: GridSize.phone,
+      );
       expect(effectiveGridSize(s), GridSize.phone);
     });
   });

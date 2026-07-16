@@ -82,7 +82,8 @@ void main() {
     expect(
       queries,
       contains('android.intent.action.TTS_SERVICE'),
-      reason: 'TTS_SERVICE must sit inside <queries>; in an <intent-filter> it '
+      reason:
+          'TTS_SERVICE must sit inside <queries>; in an <intent-filter> it '
           'claims Reed PROVIDES a TTS engine and grants no visibility',
     );
   });

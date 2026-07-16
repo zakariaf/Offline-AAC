@@ -146,7 +146,8 @@ void main() {
     expect(
       speech.spoken,
       contains(newWords),
-      reason: 'the tap resolved (0,0) live; a captured tile would speak the old '
+      reason:
+          'the tap resolved (0,0) live; a captured tile would speak the old '
           'sentence',
     );
     expect(speech.spoken, isNot(contains(oldWords)));
@@ -157,7 +158,10 @@ void main() {
   ) async {
     final speech = FakeSpeechService();
     tester.useDevice(Device.small);
-    await tester.pumpApp(grid: fixtureGrid(emptyAt: (0, 0)), speech: speech);
+    await tester.pumpApp(
+      grid: fixtureGrid(emptyAt: (0, 0)),
+      speech: speech,
+    );
 
     expect(
       find.byType(PhraseTile),

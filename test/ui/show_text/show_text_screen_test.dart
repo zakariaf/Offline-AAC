@@ -103,7 +103,11 @@ void main() {
       ),
     );
     final ink = _firstInk(richText.text);
-    expect(ink, t.showInk, reason: 'the type is warm ink, not the dark palette');
+    expect(
+      ink,
+      t.showInk,
+      reason: 'the type is warm ink, not the dark palette',
+    );
     expect(ink, isNot(t.ink));
   });
 

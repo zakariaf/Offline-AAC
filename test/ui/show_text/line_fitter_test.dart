@@ -31,7 +31,8 @@ void main() {
     return w;
   }
 
-  double idealSize(String line, double measure) => 100 * measure / probeWidth(line);
+  double idealSize(String line, double measure) =>
+      100 * measure / probeWidth(line);
 
   const tallBudget = 5000.0; // so the height never constrains these fits
 
@@ -61,7 +62,9 @@ void main() {
             as JustifiedPoster;
 
     for (final line in poster.lines) {
-      if (line.size >= AacType.showSizeMax - 0.5) continue; // clamped: under-fills
+      if (line.size >= AacType.showSizeMax - 0.5) {
+        continue; // clamped: under-fills
+      }
       final tp = TextPainter(
         text: TextSpan(text: line.text, style: styleAt(line.size)),
         textDirection: TextDirection.ltr,
@@ -85,7 +88,10 @@ void main() {
             )
             as JustifiedPoster;
     for (final line in poster.lines) {
-      expect(line.size, inInclusiveRange(AacType.showSizeMin, AacType.showSizeMax));
+      expect(
+        line.size,
+        inInclusiveRange(AacType.showSizeMin, AacType.showSizeMax),
+      );
     }
   });
 
@@ -186,7 +192,11 @@ void main() {
               styleAt: styleAt,
             )
             as JustifiedPoster;
-    expect(poster.lines.length, 2, reason: 'the tie must resolve to fewer lines');
+    expect(
+      poster.lines.length,
+      2,
+      reason: 'the tie must resolve to fewer lines',
+    );
   });
 
   test('a wider measure (landscape) never returns smaller type', () {

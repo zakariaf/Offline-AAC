@@ -13,6 +13,10 @@ void main() {
       'textScaleFactor',
       'withClampedTextScaling',
       'MediaQuery.withNoTextScaling',
+      // Auto-shrink is a clamp wearing a different name: it makes the LONGEST,
+      // most complex phrase the smallest and silently cancels the user's own
+      // TextScaler while contrast and tap-target stay green.
+      'FittedBox',
     ];
     for (final file in dartFilesUnder('lib')) {
       final code = stripComments(file.readAsStringSync());

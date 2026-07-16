@@ -32,7 +32,8 @@ void main() {
     expect(
       find.bySemanticsLabel(RegExp('^Theme: ')),
       findsOneWidget,
-      reason: 'the palette escape hatch lives on the board, not three screens in',
+      reason:
+          'the palette escape hatch lives on the board, not three screens in',
     );
   });
 
@@ -140,7 +141,9 @@ void main() {
           initialPaletteProvider.overrideWithValue(AacPalette.paper),
           // Canned grid, so the live drift stream (and the timer it leaks under
           // a widget test's fake clock) stays out of this theme-only test.
-          gridProvider.overrideWith((ref) => Stream<BoardGrid>.value(fixtureGrid())),
+          gridProvider.overrideWith(
+            (ref) => Stream<BoardGrid>.value(fixtureGrid()),
+          ),
         ],
         child: const MediaQuery(
           data: MediaQueryData(highContrast: true),

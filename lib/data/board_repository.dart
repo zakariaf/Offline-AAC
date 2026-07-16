@@ -303,13 +303,14 @@ final class BoardRepository {
   }
 
   Future<int?> _buttonIdAt(int boardId, int row, int col) async {
-    final slot = await (_db.select(_db.gridSlots)..where(
-          (s) =>
-              s.boardId.equals(boardId) &
-              s.rowIndex.equals(row) &
-              s.colIndex.equals(col),
-        ))
-        .getSingleOrNull();
+    final slot =
+        await (_db.select(_db.gridSlots)..where(
+              (s) =>
+                  s.boardId.equals(boardId) &
+                  s.rowIndex.equals(row) &
+                  s.colIndex.equals(col),
+            ))
+            .getSingleOrNull();
     if (slot == null) {
       throw StateError('Board $boardId has no slot at ($row, $col).');
     }
@@ -322,13 +323,14 @@ final class BoardRepository {
     int col,
     int? buttonId,
   ) async {
-    final updated = await (_db.update(_db.gridSlots)..where(
-          (s) =>
-              s.boardId.equals(boardId) &
-              s.rowIndex.equals(row) &
-              s.colIndex.equals(col),
-        ))
-        .write(GridSlotsCompanion(buttonId: Value<int?>(buttonId)));
+    final updated =
+        await (_db.update(_db.gridSlots)..where(
+              (s) =>
+                  s.boardId.equals(boardId) &
+                  s.rowIndex.equals(row) &
+                  s.colIndex.equals(col),
+            ))
+            .write(GridSlotsCompanion(buttonId: Value<int?>(buttonId)));
     if (updated != 1) {
       throw StateError('Board $boardId has no slot at ($row, $col).');
     }

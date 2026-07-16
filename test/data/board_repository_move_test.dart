@@ -21,13 +21,14 @@ void main() {
   tearDown(() => db.close());
 
   Future<int?> buttonIdAt(int boardId, int row, int col) async {
-    final slot = await (db.select(db.gridSlots)..where(
-          (s) =>
-              s.boardId.equals(boardId) &
-              s.rowIndex.equals(row) &
-              s.colIndex.equals(col),
-        ))
-        .getSingle();
+    final slot =
+        await (db.select(db.gridSlots)..where(
+              (s) =>
+                  s.boardId.equals(boardId) &
+                  s.rowIndex.equals(row) &
+                  s.colIndex.equals(col),
+            ))
+            .getSingle();
     return slot.buttonId;
   }
 
@@ -70,18 +71,29 @@ void main() {
     expect(result.data.values.first, 1);
   });
 
-  test('moveUp swaps a tile with the empty slot above it; nothing reflows', () async {
-    final boardId = await repo.rootBoardId(); // seeded 4 rows x 3 cols, full
-    // Empty (1,1) by deleting its button, then move (2,1) up into it.
-    final at21 = await buttonIdAt(boardId, 2, 1);
-    await repo.deleteTile((await buttonIdAt(boardId, 1, 1))!);
+  test(
+    'moveUp swaps a tile with the empty slot above it; nothing reflows',
+    () async {
+      final boardId = await repo.rootBoardId(); // seeded 4 rows x 3 cols, full
+      // Empty (1,1) by deleting its button, then move (2,1) up into it.
+      final at21 = await buttonIdAt(boardId, 2, 1);
+      await repo.deleteTile((await buttonIdAt(boardId, 1, 1))!);
 
-    await repo.moveUp(boardId, 2, 1);
+      await repo.moveUp(boardId, 2, 1);
 
-    expect(await buttonIdAt(boardId, 1, 1), at21, reason: 'the tile moved up');
-    expect(await buttonIdAt(boardId, 2, 1), isNull, reason: 'empty landed below');
-    expect(await slotCount(boardId), 12, reason: 'exactly rows x cols slots');
-  });
+      expect(
+        await buttonIdAt(boardId, 1, 1),
+        at21,
+        reason: 'the tile moved up',
+      );
+      expect(
+        await buttonIdAt(boardId, 2, 1),
+        isNull,
+        reason: 'empty landed below',
+      );
+      expect(await slotCount(boardId), 12, reason: 'exactly rows x cols slots');
+    },
+  );
 
   test('after a move every coordinate is present exactly once', () async {
     final boardId = await repo.rootBoardId();
@@ -138,8 +150,11 @@ void main() {
     expect(await slotCount(boardId), 6);
   });
 
-  test('moveUp from row 0 refuses rather than silently doing nothing', () async {
-    final boardId = await repo.rootBoardId();
-    expect(() => repo.moveUp(boardId, 0, 0), throwsStateError);
-  });
+  test(
+    'moveUp from row 0 refuses rather than silently doing nothing',
+    () async {
+      final boardId = await repo.rootBoardId();
+      expect(() => repo.moveUp(boardId, 0, 0), throwsStateError);
+    },
+  );
 }

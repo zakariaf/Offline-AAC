@@ -1,5 +1,6 @@
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:offline_aac/model/board_grid.dart';
 import 'package:offline_aac/ui/board/phrase_tile.dart';
 
 import '../support/harness.dart';
@@ -18,40 +19,62 @@ import '../support/tiles.dart';
 /// Ahem's.
 void main() {
   // The exact ladder the acceptance names: 1.3 and 1.5 catch the nonlinear
-  // mid-range, 3.0 is Larger Accessibility Sizes.
+  // mid-range, 3.0 is Larger Accessibility Sizes. Bold is a first-class axis —
+  // `wght` widens advances, so a label that fits regular can lose a word bold —
+  // and both the 3x4 default and the 6-tile large layout are swept, so the large
+  // layout is never the untested escape hatch at 200%.
   const scales = <double>[1, 1.3, 1.5, 2, 3];
+  final layouts = <String, BoardGrid Function()>{
+    '3x4': fixtureGrid,
+    '3x2': fixtureGrid6,
+  };
 
   Finder tileFinder(int row, int col) => find.byWidgetPredicate(
     (w) => w is PhraseTile && w.row == row && w.col == col,
   );
 
-  for (final scale in scales) {
-    testWidgets('no label loses a word at ${scale}x', (tester) async {
-      // 360x800 at 3x: the tightest board the app ships, where a tile is
-      // narrowest and a label is likeliest to lose its tail.
-      tester.useDevice(Device.small);
-      await tester.pumpApp(textScale: scale);
+  for (final layout in layouts.entries) {
+    for (final scale in scales) {
+      for (final bold in <bool>[false, true]) {
+        testWidgets(
+          '${layout.key}: no label loses a word @ x$scale'
+          '${bold ? ' bold' : ''}',
+          (tester) async {
+            // 360x800 at 3x: the tightest board the app ships, where a tile is
+            // narrowest and a label is likeliest to lose its tail.
+            tester.useDevice(Device.small);
+            final grid = layout.value();
+            await tester.pumpApp(grid: grid, textScale: scale, boldText: bold);
 
-      // The coarse net first: if any tile flex-overflowed, that is a separate
-      // and louder bug, and it would make the paragraph reads below meaningless.
-      expect(tester.takeException(), isNull);
+            // The coarse net first: a flex-overflow is a separate, louder bug,
+            // and it would make the paragraph reads below meaningless.
+            expect(tester.takeException(), isNull);
 
-      for (final tile in kByPriority) {
-        final paragraph = tester.renderObject<RenderParagraph>(
-          find.descendant(
-            of: tileFinder(tile.row, tile.col),
-            matching: find.text(tile.label),
-          ),
-        );
-        expect(
-          paragraph.didExceedMaxLines,
-          isFalse,
-          reason:
-              '"${tile.label}" lost a line at ${scale}x — the grid should have '
-              'dropped a column or grown the tile so every word stayed visible',
+            for (final tile in grid.tiles.whereType<Tile>()) {
+              // didExceedMaxLines is the assertion the whole design turns on:
+              // true means a line was DROPPED — silently, with no exception and
+              // no ellipsis. It is a stronger gate than a slot-vs-text size
+              // heuristic, which is why it is what is asserted here.
+              final paragraph = tester.renderObject<RenderParagraph>(
+                find.descendant(
+                  of: tileFinder(tile.row, tile.col),
+                  matching: find.text(tile.label),
+                ),
+              );
+              expect(
+                paragraph.didExceedMaxLines,
+                isFalse,
+                reason:
+                    '"${tile.label}" lost a line at x$scale'
+                    '${bold ? ' bold' : ''} (${layout.key}) — the grid should '
+                    'have dropped a column or grown the tile so every word '
+                    'stayed visible',
+              );
+            }
+          },
         );
       }
-    });
+    }
   }
 
   testWidgets('the default board is a clean 3-column grid', (tester) async {

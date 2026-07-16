@@ -14,8 +14,9 @@ import 'package:offline_aac/ui/strings.dart';
 /// service. This screen re-filters nothing: a network voice in this list is a
 /// user tapping a tile in a dead zone and getting silence, and that rule has one
 /// tested home.
-final FutureProvider<List<Voice>> voicesProvider =
-    FutureProvider<List<Voice>>((ref) => ref.watch(speechServiceProvider).voices());
+final FutureProvider<List<Voice>> voicesProvider = FutureProvider<List<Voice>>(
+  (ref) => ref.watch(speechServiceProvider).voices(),
+);
 
 /// The voice picker — the epic. Each row is audible BEFORE it is chosen: a tap
 /// speaks a sample in that voice through the real preview path (so a voice that
@@ -199,9 +200,7 @@ class _VoiceRow extends StatelessWidget {
                         voice.name,
                         style: AacType.field.copyWith(
                           color: t.ink,
-                          fontWeight: bold || selected
-                              ? FontWeight.w800
-                              : null,
+                          fontWeight: bold || selected ? FontWeight.w800 : null,
                         ),
                       ),
                     ),
@@ -209,7 +208,10 @@ class _VoiceRow extends StatelessWidget {
                 ),
                 if (error != null)
                   Padding(
-                    padding: const EdgeInsetsDirectional.only(top: 4, start: 28),
+                    padding: const EdgeInsetsDirectional.only(
+                      top: 4,
+                      start: 28,
+                    ),
                     child: Text(
                       error!,
                       style: AacType.meta.copyWith(color: t.ink),

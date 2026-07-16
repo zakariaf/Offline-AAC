@@ -6,7 +6,8 @@ import 'package:offline_aac/data/settings_repository.dart';
 import 'package:offline_aac/data/speech/speech_service.dart' show OutputMode;
 import 'package:offline_aac/model/aac_palette.dart';
 import 'package:offline_aac/ui/app.dart';
-import 'package:offline_aac/ui/board/board_controller.dart' show crashLogProvider;
+import 'package:offline_aac/ui/board/board_controller.dart'
+    show crashLogProvider;
 
 /// The repository that owns every preference key and format.
 final Provider<SettingsRepository> settingsRepositoryProvider =
@@ -122,7 +123,9 @@ class SettingsController extends Notifier<ReedSettings> {
   void _persist(Future<void> write, String key) {
     unawaited(
       write.catchError((Object error, StackTrace stack) {
-        ref.read(crashLogProvider).record('settings write $key failed: $error', stack);
+        ref
+            .read(crashLogProvider)
+            .record('settings write $key failed: $error', stack);
       }),
     );
   }

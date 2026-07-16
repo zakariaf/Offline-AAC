@@ -184,8 +184,7 @@ class SettingsRepository {
   /// The standing line is a user string: stored EXACTLY as given. No trim, no
   /// capitalisation, no appended period, no re-fill of an empty value with the
   /// default — an empty line is a choice the editor must honour, not correct.
-  Future<void> setStandingLineText(String value) =>
-      _put(_kStandingText, value);
+  Future<void> setStandingLineText(String value) => _put(_kStandingText, value);
 
   /// The high-contrast polarity preference. Must be one of the two HC palettes.
   Future<void> setHcPolarity(AacPalette value) {

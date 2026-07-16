@@ -198,11 +198,14 @@ void main() {
     expect(ground(tester).color, isNot(t.showGround));
   });
 
-  testWidgets('at 200% text scale the standing line holds and nothing overflows', (
-    tester,
-  ) async {
-    await enterShow(tester, textScale: 2);
-    expect(find.text(defaultStandingLine), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+  testWidgets(
+    'at 200% text scale the standing line holds and nothing overflows',
+    (
+      tester,
+    ) async {
+      await enterShow(tester, textScale: 2);
+      expect(find.text(defaultStandingLine), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

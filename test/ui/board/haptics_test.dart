@@ -35,7 +35,10 @@ void main() {
       ProviderScope.containerOf(tester.element(find.byType(BoardScreen)));
 
   Finder aTile() => find.byWidgetPredicate(
-    (w) => w is PhraseTile && w.row == kByPriority.first.row && w.col == kByPriority.first.col,
+    (w) =>
+        w is PhraseTile &&
+        w.row == kByPriority.first.row &&
+        w.col == kByPriority.first.col,
   );
 
   testWidgets('with haptics on, a press fires exactly one selectionClick', (
@@ -59,7 +62,9 @@ void main() {
     final speech = FakeSpeechService();
     tester.useDevice(Device.small);
     await tester.pumpApp(speech: speech);
-    container(tester).read(settingsProvider.notifier).setHaptics(enabled: false);
+    container(
+      tester,
+    ).read(settingsProvider.notifier).setHaptics(enabled: false);
     await tester.pump();
 
     await tester.tap(aTile());
@@ -104,7 +109,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
     expect(haptics, hasLength(1));
 
-    container(tester).read(settingsProvider.notifier).setHaptics(enabled: false);
+    container(
+      tester,
+    ).read(settingsProvider.notifier).setHaptics(enabled: false);
     await tester.pump();
     await tester.tap(aTile());
     await tester.pump(const Duration(milliseconds: 200));

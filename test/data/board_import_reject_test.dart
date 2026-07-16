@@ -65,26 +65,32 @@ void main() {
     expect(
       await counts(db),
       before,
-      reason: 'a rejected file must write nothing — boards, buttons and slots '
+      reason:
+          'a rejected file must write nothing — boards, buttons and slots '
           'identical before and after',
     );
     await db.close();
   }
 
-  test('a valid board imports (control) so the rejections mean something', () async {
-    final db = AppDatabase.forTesting(NativeDatabase.memory());
-    final before = await counts(db);
-    await BoardImport(db, media).importBytes(encode());
-    final after = await counts(db);
-    expect(after.$1, greaterThan(before.$1), reason: 'a board was added');
-    await db.close();
-  });
+  test(
+    'a valid board imports (control) so the rejections mean something',
+    () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final before = await counts(db);
+      await BoardImport(db, media).importBytes(encode());
+      final after = await counts(db);
+      expect(after.$1, greaterThan(before.$1), reason: 'a board was added');
+      await db.close();
+    },
+  );
 
   group('rejection table — one per row', () {
     test('format_version absent, non-int, or > 1', () async {
       await expectRejected(encode(manifest: _manifest(formatVersion: 2)));
       await expectRejected(encode(manifest: _manifest(formatVersion: 'one')));
-      await expectRejected(encode(manifest: _manifest(omitFormatVersion: true)));
+      await expectRejected(
+        encode(manifest: _manifest(omitFormatVersion: true)),
+      );
     });
 
     test('order length != rows, or a row length != columns', () async {
@@ -113,8 +119,10 @@ void main() {
 
     test('a label longer than 16, or absent', () async {
       final tooLong = _validBoard();
-      (tooLong['buttons']! as List<Object?>)[0] =
-          _button(id: 10, label: 'seventeen chars!!'); // 17 chars
+      (tooLong['buttons']! as List<Object?>)[0] = _button(
+        id: 10,
+        label: 'seventeen chars!!',
+      ); // 17 chars
       await expectRejected(encode(board: tooLong));
 
       final absent = _validBoard();
@@ -149,9 +157,11 @@ void main() {
         if (outside.existsSync()) outside.deleteSync();
       });
       await expectRejected(
-        encode(extra: <(String, List<int>)>[
-          ('../../reed_evil.txt', utf8.encode('pwned')),
-        ]),
+        encode(
+          extra: <(String, List<int>)>[
+            ('../../reed_evil.txt', utf8.encode('pwned')),
+          ],
+        ),
       );
       expect(
         outside.existsSync(),
@@ -171,13 +181,18 @@ void main() {
             'height': 10,
           },
         ];
-      (board['buttons']! as List<Object?>)[0] =
-          _button(id: 10, label: 'Yes', imageId: 1);
+      (board['buttons']! as List<Object?>)[0] = _button(
+        id: 10,
+        label: 'Yes',
+        imageId: 1,
+      );
       await expectRejected(encode(board: board));
     });
 
     test('a file that is not a zip at all', () async {
-      await expectRejected(Uint8List.fromList(utf8.encode('this is not a zip')));
+      await expectRejected(
+        Uint8List.fromList(utf8.encode('this is not a zip')),
+      );
     });
   });
 
@@ -186,65 +201,70 @@ void main() {
     // matching the acceptance criterion verbatim.
     const phrase = "I need to leave, I'm not able to talk right now";
 
-    test('a parse failure: the exception is phrase-free and the log stays clean',
-        () async {
-      // Invalid JSON that CONTAINS the phrase — exactly what jsonDecode would
-      // echo back in its own message.
-      final bytes = encode(rawBoard: '{ "name": "$phrase", broken');
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
+    test(
+      'a parse failure: the exception is phrase-free and the log stays clean',
+      () async {
+        // Invalid JSON that CONTAINS the phrase — exactly what jsonDecode would
+        // echo back in its own message.
+        final bytes = encode(rawBoard: '{ "name": "$phrase", broken');
+        final db = AppDatabase.forTesting(NativeDatabase.memory());
 
-      // board_import throws a FIXED FormatException — jsonDecode's phrase-bearing
-      // message is replaced inside portable_board, so no call site can leak it.
-      await expectLater(
-        BoardImport(db, media).importBytes(bytes),
-        throwsA(
-          predicate<Object>(
-            (e) => e is FormatException && !e.toString().contains(phrase),
+        // board_import throws a FIXED FormatException — jsonDecode's phrase-bearing
+        // message is replaced inside portable_board, so no call site can leak it.
+        await expectLater(
+          BoardImport(db, media).importBytes(bytes),
+          throwsA(
+            predicate<Object>(
+              (e) => e is FormatException && !e.toString().contains(phrase),
+            ),
           ),
-        ),
-      );
-
-      // And logging the failure the way the controller does — a FIXED message —
-      // leaves nothing of the phrase on disk.
-      final logFile = File(p.join(tmp.path, 'log.txt'));
-      final log = CrashLog.atFile(logFile);
-      try {
-        await BoardImport(db, media).importBytes(bytes);
-      } on FormatException catch (_, s) {
-        log.record('import rejected: the file failed validation', s);
-      }
-      expect(logFile.readAsStringSync().contains(phrase), isFalse);
-      await db.close();
-    });
-
-    test('a forced SqliteException carrying the phrase never reaches the log',
-        () async {
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
-      final logFile = File(p.join(tmp.path, 'log.txt'));
-      final log = CrashLog.atFile(logFile);
-
-      // Force a real SqliteException whose statement text embeds the phrase — a
-      // FK violation on an insert that names it. This is the shape drift raises
-      // when a write fails mid-import.
-      try {
-        await db.customStatement(
-          'INSERT INTO buttons (board_id, label, vocalization) '
-          "VALUES (999999, 'x', '$phrase')",
         );
-        fail('the FK violation should have thrown');
-      } on SqliteException catch (_, s) {
-        // The controller logs a FIXED message for this arm, never the exception.
-        log.record('import failed: a database write error', s);
-      }
 
-      expect(
-        logFile.readAsStringSync().contains(phrase),
-        isFalse,
-        reason: 'the statement text carries the phrase; only a fixed message may '
-            'reach a log the user might mail out',
-      );
-      await db.close();
-    });
+        // And logging the failure the way the controller does — a FIXED message —
+        // leaves nothing of the phrase on disk.
+        final logFile = File(p.join(tmp.path, 'log.txt'));
+        final log = CrashLog.atFile(logFile);
+        try {
+          await BoardImport(db, media).importBytes(bytes);
+        } on FormatException catch (_, s) {
+          log.record('import rejected: the file failed validation', s);
+        }
+        expect(logFile.readAsStringSync().contains(phrase), isFalse);
+        await db.close();
+      },
+    );
+
+    test(
+      'a forced SqliteException carrying the phrase never reaches the log',
+      () async {
+        final db = AppDatabase.forTesting(NativeDatabase.memory());
+        final logFile = File(p.join(tmp.path, 'log.txt'));
+        final log = CrashLog.atFile(logFile);
+
+        // Force a real SqliteException whose statement text embeds the phrase — a
+        // FK violation on an insert that names it. This is the shape drift raises
+        // when a write fails mid-import.
+        try {
+          await db.customStatement(
+            'INSERT INTO buttons (board_id, label, vocalization) '
+            "VALUES (999999, 'x', '$phrase')",
+          );
+          fail('the FK violation should have thrown');
+        } on SqliteException catch (_, s) {
+          // The controller logs a FIXED message for this arm, never the exception.
+          log.record('import failed: a database write error', s);
+        }
+
+        expect(
+          logFile.readAsStringSync().contains(phrase),
+          isFalse,
+          reason:
+              'the statement text carries the phrase; only a fixed message may '
+              'reach a log the user might mail out',
+        );
+        await db.close();
+      },
+    );
   });
 }
 

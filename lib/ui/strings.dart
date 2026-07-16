@@ -126,7 +126,8 @@ const String noOfflineVoices =
 /// The inline failure lines, one per outcome. State the fact, then the action.
 const String voiceNotInstalledError =
     'That voice isn’t installed. Pick another in settings.';
-const String voiceUnavailableError = 'That voice isn’t available. Pick another.';
+const String voiceUnavailableError =
+    'That voice isn’t available. Pick another.';
 const String voiceEngineError =
     'The speech engine didn’t respond. Your words are on screen.';
 
@@ -145,5 +146,6 @@ const String openWhatItSaysChrome = 'set what it says';
 
 /// The save-failure line: state the fact, then the next action. Inline and
 /// non-blocking — never a modal. No apology, no "Sorry", no exclamation.
-const String editSaveFailed = 'That tile didn’t save. Tap it to edit and save '
+const String editSaveFailed =
+    'That tile didn’t save. Tap it to edit and save '
     'again.';
