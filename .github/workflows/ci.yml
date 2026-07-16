@@ -136,9 +136,18 @@ jobs:
 
       - run: flutter pub get
 
-      - name: Build APK
-        # This is the only step that exercises sqlite3's build hook, which
-        # DOWNLOADS a prebuilt native library at build time. If the hook ever
-        # breaks or the download host disappears, it fails here rather than on a
-        # user's phone.
-        run: flutter build apk --debug
+      - name: Build release appbundle (unsigned)
+        # Also the only step that exercises sqlite3's build hook, which DOWNLOADS
+        # a prebuilt native library at build time — it fails here rather than on
+        # a user's phone. Unsigned on purpose (E11-T02): CI proves the bundle
+        # compiles; releases are built and signed locally with the upload key,
+        # so there is no keystore in secrets to leak. No --obfuscate and no
+        # --split-debug-info — both strip Dart names from the AOT crash log, the
+        # only field signal this app will ever have (E11-T03, RELEASE.md).
+        run: flutter build appbundle --release
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: app-release-unsigned-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 14
