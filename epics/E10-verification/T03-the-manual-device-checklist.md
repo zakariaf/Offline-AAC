@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E10 — Verification |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | S |
 | **Depends on** | E04-T04 |
 | **Blocks** | E11-T04 |

@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Status** | Not started |
+| **Status** | Done |
 | **Tasks** | 5 |
 | **Depends on** | E04 (speech), E05 (speak screen), E06 (show mode) |
 
