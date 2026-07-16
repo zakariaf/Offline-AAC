@@ -1,0 +1,39 @@
+name: Feature request
+description: Suggest something Reed should do — or should do differently.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Reed says no to a lot on purpose (see the skills under `.claude/skills/` and the epics under `epics/`). Tying a request to *who it helps* is the strongest case you can make.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What is hard, missing, or wrong today? Describe the situation, not just the fix.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you'd like
+    validations:
+      required: true
+  - type: dropdown
+    id: who
+    attributes:
+      label: Who does this help most?
+      options:
+        - Someone with intermittent speech (can talk, but only sometimes)
+        - Someone with unreliable speech (says things that don't match the meaning)
+        - Someone with insufficient speech (fluent-sounding, still can't convey need)
+        - A contributor / developer
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+    validations:
+      required: false

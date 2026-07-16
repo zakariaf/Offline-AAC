@@ -1,0 +1,57 @@
+name: Bug report
+description: Something in Reed behaved wrong — a tile that didn't speak, a crash, a layout that clipped.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. **Please do not paste your real phrases, an exported crash log, or any text you typed into Reed** — those are private, and an exported log can contain them. Use invented, neutral examples (e.g. "the tile said Hello world") when describing what happened.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you do, and what did Reed do (or not do)?
+      placeholder: I tapped a tile and no sound played. The words did / did not appear on screen.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: If you can, a numbered list. Use invented sample phrases.
+    validations:
+      required: false
+  - type: input
+    id: device
+    attributes:
+      label: Device & OS
+      placeholder: Pixel 6a, Android 14  /  iPhone 13, iOS 18
+    validations:
+      required: true
+  - type: input
+    id: tts
+    attributes:
+      label: Text-to-speech engine & voice (if the bug is about speech)
+      placeholder: Google TTS, en-US voice  /  Samsung TTS  /  not sure
+    validations:
+      required: false
+  - type: input
+    id: version
+    attributes:
+      label: Reed version / build
+      placeholder: e.g. 0.1.0+1, or the commit if you built from source
+    validations:
+      required: false
+  - type: checkboxes
+    id: no-private-data
+    attributes:
+      label: Privacy
+      options:
+        - label: This report contains no real phrases, exported logs, or text I typed into Reed.
+          required: true

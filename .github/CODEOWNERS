@@ -1,0 +1,10 @@
+# Code owners for Reed.
+# @zakariaf is requested for review on every change by default.
+* @zakariaf
+
+# The privacy / policy tripwires and the manifests they guard — extra care here.
+/test/policy/                     @zakariaf
+/android/app/src/main/AndroidManifest.xml   @zakariaf
+/android/app/src/main/res/xml/data_extraction_rules.xml   @zakariaf
+/.github/                         @zakariaf
+/lib/data/speech/                 @zakariaf
