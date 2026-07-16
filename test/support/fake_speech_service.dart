@@ -68,10 +68,16 @@ class FakeSpeechService implements SpeechService {
     this.env = SpeechEnv.reportedSuccessButSilent,
     this.warmUpCompletes = true,
     this.hangSpeak = false,
+    this.voicesOverride,
   });
 
   /// The world this fake presents. Mutable so a single test can change it.
   SpeechEnv env;
+
+  /// When set, [voices] returns this exact list instead of the env-derived one.
+  /// Lets the voice-picker tests present specific voice NAMES (a long id to
+  /// prove the row wraps at 200%) that the env's single 'v' cannot.
+  final List<Voice>? voicesOverride;
 
   /// When true, [speak] records the call and returns a Future that never
   /// completes — an engine that accepts an utterance and never reports it done.
@@ -134,6 +140,18 @@ class FakeSpeechService implements SpeechService {
     };
   }
 
+  /// The preview shares the speak path: the outcome is env-driven (so
+  /// setVoiceReturnsZero yields VoiceUnavailable here too), and it records
+  /// 'speak' so the barge-in ordering `['stop', 'speak']` holds for the picker.
+  /// The voice/pitch/rate are ignored — the env, not the arguments, decides.
+  @override
+  Future<SpeakOutcome> preview(
+    String text, {
+    required Voice voice,
+    required double pitch,
+    required double rate,
+  }) => speak(text);
+
   @override
   Future<void> stop() async {
     calls.add('stop');
@@ -142,6 +160,7 @@ class FakeSpeechService implements SpeechService {
 
   @override
   Future<List<Voice>> voices() async {
+    if (voicesOverride != null) return voicesOverride!;
     // The filter has already run by the time voices reach the service, so the
     // network-only and half-downloaded worlds correctly present as "no usable
     // voice" — the state the UI must handle.

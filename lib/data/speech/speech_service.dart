@@ -79,6 +79,20 @@ abstract interface class SpeechService {
 
   /// Already filtered: network_required and notInstalled voices never appear.
   Future<List<Voice>> voices();
+
+  /// Audition [voice] at [pitch]/[rate] by speaking [text] — the voice picker's
+  /// preview. Goes through the SAME setVoice / notInstalled / timeout machinery
+  /// as [speak], so a voice that reports success and produces nothing is caught
+  /// here, at selection time, rather than at the next shutdown. It does NOT
+  /// persist the voice as current — the caller commits it on a [SpokeAloud].
+  /// Barge-in is the caller's policy, exactly as with [speak].
+  @useResult
+  Future<SpeakOutcome> preview(
+    String text, {
+    required Voice voice,
+    required double pitch,
+    required double rate,
+  });
 }
 
 /// The pitch range the synthesizer accepts. `1.0` is the natural pitch.

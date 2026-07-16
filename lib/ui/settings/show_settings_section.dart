@@ -40,12 +40,34 @@ class ShowSettingsSection extends ConsumerWidget {
           onSelectionChanged: (selection) =>
               unawaited(controller.setShowPolarity(selection.first)),
         ),
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          title: const Text(standingLineSettingLabel),
-          value: settings.standingLineEnabled,
-          onChanged: (enabled) =>
-              unawaited(controller.setStandingLineEnabled(enabled: enabled)),
+        // A plain gesture toggle, never SwitchListTile — that is an InkWell, and
+        // NoSplash kills only the splash while the 200ms highlight fade still
+        // schedules a frame. The value is stated in the label, a non-colour
+        // channel, and the whole row is the target.
+        Semantics(
+          container: true,
+          button: true,
+          toggled: settings.standingLineEnabled,
+          label:
+              'Standing line: ${settings.standingLineEnabled ? 'on' : 'off'}. '
+              'Tap to change.',
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => unawaited(
+              controller.setStandingLineEnabled(
+                enabled: !settings.standingLineEnabled,
+              ),
+            ),
+            child: ExcludeSemantics(
+              child: Padding(
+                padding: const EdgeInsetsDirectional.symmetric(vertical: 14),
+                child: Text(
+                  '$standingLineSettingLabel: '
+                  '${settings.standingLineEnabled ? 'on' : 'off'}',
+                ),
+              ),
+            ),
+          ),
         ),
         _StandingLineField(
           // Keyed by the persisted value so an external change (a reset, a

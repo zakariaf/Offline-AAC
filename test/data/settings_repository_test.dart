@@ -152,6 +152,90 @@ void main() {
     });
   });
 
+  group('output mode', () {
+    test('defaults to speak on a file that has never been written', () async {
+      expect((await settings.load()).output, OutputMode.speak);
+    });
+
+    test('round-trips through a fresh repository over the same file', () async {
+      await settings.setOutputMode(OutputMode.both);
+      // Reconstruct the repository over the same db — the value is on disk.
+      final reloaded = await SettingsRepository(db).load();
+      expect(reloaded.output, OutputMode.both);
+    });
+
+    for (final garbage in <String>['', 'Speak ', 'silent', '2']) {
+      test('garbage "$garbage" falls back to speak', () async {
+        await db.into(db.settings).insertOnConflictUpdate(
+          SettingsCompanion.insert(key: 'output_mode', value: garbage),
+        );
+        expect((await settings.load()).output, OutputMode.speak);
+      });
+    }
+  });
+
+  group('low stimulus', () {
+    test('defaults to false on a fresh database', () async {
+      expect((await settings.load()).lowStimulus, isFalse);
+    });
+
+    test('setLowStimulus(true) stores the literal string "true"', () async {
+      await settings.setLowStimulus(enabled: true);
+      final row = await (db.select(
+        db.settings,
+      )..where((s) => s.key.equals('low_stimulus'))).getSingle();
+      expect(row.value, 'true');
+      expect((await settings.load()).lowStimulus, isTrue);
+    });
+
+    for (final garbage in <String>['', 'True ', '1', 'yes']) {
+      test('a garbage value "$garbage" falls back to false', () async {
+        await db.into(db.settings).insertOnConflictUpdate(
+          SettingsCompanion.insert(key: 'low_stimulus', value: garbage),
+        );
+        expect((await settings.load()).lowStimulus, isFalse);
+      });
+    }
+
+    test('toggling it never writes theme or grid_size', () async {
+      // The mode DERIVES; it must not clobber the preferences it overrides.
+      await settings.setGridSize(GridSize.large);
+      await settings.setPalette(AacPalette.paper);
+      final gridBefore = await _raw(db, 'grid_size');
+      final themeBefore = await _raw(db, 'theme');
+
+      await settings.setLowStimulus(enabled: true);
+      await settings.setLowStimulus(enabled: false);
+
+      expect(await _raw(db, 'grid_size'), gridBefore);
+      expect(await _raw(db, 'theme'), themeBefore);
+    });
+  });
+
+  group('high-contrast polarity', () {
+    test('defaults to hcInk', () async {
+      expect((await settings.load()).hcPolarity, AacPalette.hcInk);
+    });
+
+    test('setHcPolarity writes the literal name and round-trips', () async {
+      await settings.setHcPolarity(AacPalette.hcPaper);
+      final row = await (db.select(
+        db.settings,
+      )..where((s) => s.key.equals('hc_polarity'))).getSingle();
+      expect(row.value, 'hcPaper');
+      expect((await settings.load()).hcPolarity, AacPalette.hcPaper);
+    });
+
+    for (final garbage in <String>['', 'ink', 'paper', 'hcpaper']) {
+      test('a non-HC value "$garbage" falls back to hcInk', () async {
+        await db.into(db.settings).insertOnConflictUpdate(
+          SettingsCompanion.insert(key: 'hc_polarity', value: garbage),
+        );
+        expect((await settings.load()).hcPolarity, AacPalette.hcInk);
+      });
+    }
+  });
+
   group('the show polarity', () {
     test('defaults to bright', () async {
       expect((await settings.load()).showPolarity, ShowPolarity.bright);
@@ -177,4 +261,13 @@ void main() {
       expect((await settings.load()).showPolarity, ShowPolarity.matchTheme);
     });
   });
+}
+
+/// The raw stored string for a key, or null if absent — for asserting the
+/// on-disk value directly rather than a round trip.
+Future<String?> _raw(AppDatabase db, String key) async {
+  final row = await (db.select(
+    db.settings,
+  )..where((s) => s.key.equals(key))).getSingleOrNull();
+  return row?.value;
 }

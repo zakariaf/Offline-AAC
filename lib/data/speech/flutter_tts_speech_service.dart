@@ -78,6 +78,43 @@ final class FlutterTtsSpeechService implements SpeechService {
     return const SpokeAloud();
   }
 
+  /// The preview: the same guards and timeout as [speak], applied to a voice the
+  /// caller names rather than the stored one, at a caller-chosen pitch and rate.
+  /// The notInstalled guard sits BEFORE the setVoice check for the same reason it
+  /// does in [speak] — setVoice returns 1 for a notInstalled voice.
+  @override
+  @useResult
+  Future<SpeakOutcome> preview(
+    String text, {
+    required Voice voice,
+    required double pitch,
+    required double rate,
+  }) async {
+    if (voice.notInstalled) {
+      return VoiceNotInstalled(text, voiceName: voice.name);
+    }
+    final Object? set = await _tts.setVoice(<String, String>{
+      'name': voice.name,
+      'locale': voice.locale,
+    });
+    if (set != _ttsSuccess) {
+      return VoiceUnavailable(text, voiceName: voice.name);
+    }
+    await _tts.setPitch(pitch);
+    await _tts.setSpeechRate(rate);
+
+    final Object? spoke;
+    try {
+      spoke = await _tts.speak(text).timeout(_speakTimeout);
+    } on TimeoutException {
+      return EngineTimedOut(text, waited: _speakTimeout);
+    } on PlatformException catch (e) {
+      return EngineRejected(text, code: e.code);
+    }
+    if (spoke != _ttsSuccess) return EngineRejected(text, code: spoke);
+    return const SpokeAloud();
+  }
+
   /// Barge-in is the caller's policy — the controller stops before every speak.
   /// This just stops.
   @override

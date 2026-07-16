@@ -65,8 +65,11 @@ class PhraseTile extends StatelessWidget {
     this.onMoveDown,
     this.onHide,
     this.onUnhide,
+    this.hapticsEnabled = _alwaysOn,
     super.key,
   });
+
+  static bool _alwaysOn() => true;
 
   /// The slot's coordinate. Passed separately from [tile] because an empty cell
   /// has no tile and still has a position — position is what exists first.
@@ -112,6 +115,11 @@ class PhraseTile extends StatelessWidget {
   final void Function(int row, int col)? onMoveDown;
   final void Function(int buttonId)? onHide;
   final void Function(int buttonId)? onUnhide;
+
+  /// Whether the press haptic fires, READ at press time (not captured at build)
+  /// so toggling haptics off takes effect on the very next tap. A function, not a
+  /// bool, precisely so the read is deferred to the callback.
+  final bool Function() hapticsEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -223,7 +231,14 @@ class PhraseTile extends StatelessWidget {
                 // is acknowledged in the hand the instant a finger lands. It is
                 // non-committal: on a large-text board this plane scrolls, and a
                 // drag that becomes a scroll gets only this tick, never speech.
-                onTapDown: (_) => unawaited(HapticFeedback.selectionClick()),
+                // Gated on the user's setting, read HERE at press time; the gate
+                // wraps ONLY the pulse — speech is outside it, always, because a
+                // gate that early-returns past speech is the worst bug in the app.
+                onTapDown: (_) {
+                  if (hapticsEnabled()) {
+                    unawaited(HapticFeedback.selectionClick());
+                  }
+                },
                 // Speech and the lit state fire on TAP — pointer up, after this
                 // tile has WON the gesture arena. A vertical drag loses the
                 // arena to the scroll view, so scrolling the board never speaks.

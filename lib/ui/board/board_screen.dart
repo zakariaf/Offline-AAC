@@ -10,6 +10,9 @@ import 'package:offline_aac/ui/board/phrase_tile.dart';
 import 'package:offline_aac/ui/board/responsive_grid.dart';
 import 'package:offline_aac/ui/core/tokens.dart';
 import 'package:offline_aac/ui/edit/tile_editor.dart';
+import 'package:offline_aac/ui/settings/settings_controller.dart';
+import 'package:offline_aac/ui/settings/settings_controls.dart';
+import 'package:offline_aac/ui/settings/settings_screen.dart';
 
 /// The board plane's shape before the board itself has arrived.
 ///
@@ -91,13 +94,24 @@ class BoardScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              // The board chrome. One visible control today — the edit toggle —
-              // right-aligned so it does not sit under a thumb reaching for a
-              // tile. A hidden gesture would be unreachable by switch and screen
-              // reader; a button is not.
-              const Align(
-                alignment: AlignmentDirectional.centerEnd,
-                child: EditModeButton(),
+              // The board chrome — words, not a gesture. The theme control lives
+              // here so the escape hatch for an unreadable palette is one tap
+              // from the grid; settings only mirrors it. A Wrap, not a Row, so at
+              // large text the words flow onto a second line instead of
+              // overflowing — the chrome obeys the text scale like everything else.
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: <Widget>[
+                  const ThemeChrome(),
+                  SettingsButton(
+                    onOpen: () => Navigator.of(
+                      context,
+                    ).push(SettingsScreen.route()),
+                  ),
+                  const EditModeButton(),
+                ],
               ),
               const SizedBox(height: Geom.gapRow),
               // The compose field doubles as the fallback surface: when speech
@@ -375,6 +389,10 @@ class _BoardCell extends ConsumerWidget {
       // (row, col) key, never captured content.
       onEdit: (r, c) =>
           ref.read(boardControllerProvider.notifier).onEditPressed(r, c),
+      // ref.read at PRESS time (inside the closure), never a value captured out
+      // of build() — the user turns haptics off, walks back, and the next tap is
+      // silent. The gate is only over the pulse; speech never depends on it.
+      hapticsEnabled: () => ref.read(settingsProvider).haptics,
     );
   }
 }

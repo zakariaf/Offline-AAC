@@ -69,20 +69,26 @@ Future<void> main() async {
 
   // Read at speak time, never captured: Android garbage-collects voice data, so
   // the answer changes under us. It stays null until the post-frame re-resolve
-  // below, and speak() reports null as words on screen rather than silence.
-  Voice? voice;
-  final speech = FlutterTtsSpeechService(() => voice);
+  // below, and speak() reports null as words on screen rather than silence. The
+  // same holder is exposed via currentVoiceProvider so the voice picker can
+  // point the engine at a newly chosen voice without a restart.
+  final currentVoice = CurrentVoice();
+  final speech = FlutterTtsSpeechService(() => currentVoice.value);
 
   runApp(
     ProviderScope(
       overrides: [
         databaseProvider.overrideWithValue(db),
         speechServiceProvider.overrideWithValue(speech),
+        currentVoiceProvider.overrideWithValue(currentVoice),
         crashLogProvider.overrideWithValue(log),
         // Restored BEFORE first paint, not corrected on frame 2. A flash of the
         // wrong polarity is a sudden luminance change delivered to someone in a
         // shutdown — the exact event the animation ban exists to prevent.
         initialPaletteProvider.overrideWithValue(settings.palette),
+        // The HC polarity the switcher's third position lands on, restored so
+        // the first cycle into high contrast lands on the user's choice.
+        initialHcPolarityProvider.overrideWithValue(settings.hcPolarity),
         // The whole settings snapshot, so the show screen reads the user's
         // polarity and standing line from the first time it is opened.
         initialSettingsProvider.overrideWithValue(settings),
@@ -99,7 +105,7 @@ Future<void> main() async {
     // no Flutter profile surfaces.
     unawaited(speech.warmUp());
     unawaited(
-      _restoreVoice(speech, settings.voiceId, (v) => voice = v),
+      _restoreVoice(speech, settings.voiceId, (v) => currentVoice.value = v),
     );
   });
 }

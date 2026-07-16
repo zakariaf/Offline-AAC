@@ -28,11 +28,10 @@ void main() {
     await pumpSection(tester, const ReedSettings.defaults());
 
     expect(find.text(showScreenSettingLabel), findsOneWidget);
-    expect(find.text(standingLineSettingLabel), findsOneWidget);
     // The standing-line field is pre-filled with the default sentence.
     expect(find.widgetWithText(TextField, defaultStandingLine), findsOneWidget);
-    // The switch is on by default.
-    expect(tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value, isTrue);
+    // The standing-line toggle is on by default, stated in a non-colour label.
+    expect(find.text('$standingLineSettingLabel: on'), findsOneWidget);
     // Bright is the selected segment.
     expect(
       tester.widget<SegmentedButton<ShowPolarity>>(
@@ -68,9 +67,6 @@ void main() {
       ).selected,
       <ShowPolarity>{ShowPolarity.matchTheme},
     );
-    expect(
-      tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
-      isFalse,
-    );
+    expect(find.text('$standingLineSettingLabel: off'), findsOneWidget);
   });
 }

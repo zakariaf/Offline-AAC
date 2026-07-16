@@ -19,6 +19,23 @@ final Provider<SpeechService> speechServiceProvider = Provider<SpeechService>(
   (ref) => throw UnimplementedError('speechServiceProvider must be overridden'),
 );
 
+/// A mutable holder for the live voice the engine speaks with.
+///
+/// Shared between the speech service — which reads it at speak time, never
+/// caches it, because Android garbage-collects voice data — and the voice
+/// picker, which sets it when a preview succeeds so the very next tile tap uses
+/// the chosen voice. Not a Notifier: the picker's own SELECTION highlight tracks
+/// `settings.voiceId`, which is reactive; this holder only feeds the engine.
+class CurrentVoice {
+  Voice? value;
+}
+
+/// The [CurrentVoice] in force. Overridden at the root with the one instance the
+/// speech service was constructed against, so a write here reaches the engine.
+final Provider<CurrentVoice> currentVoiceProvider = Provider<CurrentVoice>(
+  (ref) => CurrentVoice(),
+);
+
 /// The on-device log, opened first thing in `main()`.
 final Provider<CrashLog> crashLogProvider = Provider<CrashLog>(
   (ref) => throw UnimplementedError('crashLogProvider must be overridden'),

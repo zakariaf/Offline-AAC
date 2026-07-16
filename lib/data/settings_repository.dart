@@ -16,6 +16,8 @@ const String _kVoiceId = 'voice_id';
 const String _kStandingEnabled = 'standing_line_enabled';
 const String _kStandingText = 'standing_line_text';
 const String _kShowPolarity = 'show_polarity';
+const String _kHcPolarity = 'hc_polarity';
+const String _kLowStimulus = 'low_stimulus';
 
 /// The two shipping layouts: the 3-column phone default and the 2-column large
 /// board with roughly 180dp tiles for one-handed use in a shutdown.
@@ -43,6 +45,8 @@ class ReedSettings {
     required this.showPolarity,
     required this.standingLineEnabled,
     required this.standingLineText,
+    required this.hcPolarity,
+    required this.lowStimulus,
   });
 
   /// The behaviour of a fresh install. Every field here is also the fallback a
@@ -58,7 +62,9 @@ class ReedSettings {
       voiceId = null,
       showPolarity = ShowPolarity.bright,
       standingLineEnabled = true,
-      standingLineText = defaultStandingLine;
+      standingLineText = defaultStandingLine,
+      hcPolarity = AacPalette.hcInk,
+      lowStimulus = false;
 
   final AacPalette palette;
   final double pitch;
@@ -83,6 +89,15 @@ class ReedSettings {
   /// which resolves to [defaultStandingLine].
   final String standingLineText;
 
+  /// The high-contrast polarity the switcher's third position lands on: a
+  /// set-once preference ([AacPalette.hcInk] default), never a fourth cycle
+  /// stop. Always one of the two HC palettes.
+  final AacPalette hcPolarity;
+
+  /// Low-stimulus mode: undyed tiles and the 2-column layout. State-dependent,
+  /// but persisted — someone the OS kills mid-episode comes back in it.
+  final bool lowStimulus;
+
   ReedSettings copyWith({
     AacPalette? palette,
     double? pitch,
@@ -94,6 +109,8 @@ class ReedSettings {
     ShowPolarity? showPolarity,
     bool? standingLineEnabled,
     String? standingLineText,
+    AacPalette? hcPolarity,
+    bool? lowStimulus,
   }) {
     return ReedSettings(
       palette: palette ?? this.palette,
@@ -106,6 +123,8 @@ class ReedSettings {
       showPolarity: showPolarity ?? this.showPolarity,
       standingLineEnabled: standingLineEnabled ?? this.standingLineEnabled,
       standingLineText: standingLineText ?? this.standingLineText,
+      hcPolarity: hcPolarity ?? this.hcPolarity,
+      lowStimulus: lowStimulus ?? this.lowStimulus,
     );
   }
 }
@@ -168,6 +187,25 @@ class SettingsRepository {
   Future<void> setStandingLineText(String value) =>
       _put(_kStandingText, value);
 
+  /// The high-contrast polarity preference. Must be one of the two HC palettes.
+  Future<void> setHcPolarity(AacPalette value) {
+    assert(
+      value == AacPalette.hcInk || value == AacPalette.hcPaper,
+      'HC polarity must be hcInk or hcPaper, got $value.',
+    );
+    return _put(_kHcPolarity, value.name);
+  }
+
+  /// Low-stimulus mode on/off.
+  ///
+  /// NOTHING but a finger toggles this. There is no heuristic on tap rate, no
+  /// time-of-day, no failed-speech counter, no sensor, no first-launch guess,
+  /// and no prompt ("Text is large. Switch to 6 tiles?"). The app does not know
+  /// what state anyone is in, and guessing at it out loud is the parental
+  /// posture. The absence of automation here is a decision, not an omission.
+  Future<void> setLowStimulus({required bool enabled}) =>
+      _put(_kLowStimulus, enabled.toString());
+
   /// Upsert on the primary key. Never read-then-write (a lost update under a
   /// concurrent write) and never a bare insert that throws on the second call.
   Future<void> _put(String key, String value) {
@@ -205,6 +243,14 @@ class SettingsRepository {
       standingLineText: raw.containsKey(_kStandingText)
           ? raw[_kStandingText]!
           : d.standingLineText,
+      // Only the two HC palettes are valid here; any other name (a corrupt row,
+      // a light-palette name that leaked in) falls back to the default polarity.
+      hcPolarity: switch (raw[_kHcPolarity]) {
+        'hcInk' => AacPalette.hcInk,
+        'hcPaper' => AacPalette.hcPaper,
+        _ => d.hcPolarity,
+      },
+      lowStimulus: _bool(raw[_kLowStimulus], d.lowStimulus),
     );
   }
 

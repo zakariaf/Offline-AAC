@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:offline_aac/data/settings_repository.dart';
 import 'package:offline_aac/ui/board/board_screen.dart';
 import 'package:offline_aac/ui/core/tokens.dart';
+import 'package:offline_aac/ui/settings/settings_controller.dart';
 
 /// The palette restored from the versioned JSON settings file, read **before**
 /// `runApp` and injected by overriding this provider on the root
@@ -103,6 +105,19 @@ final NotifierProvider<PaletteController, AacPalette> paletteProvider =
 final Provider<AacTheme> aacThemeProvider = Provider<AacTheme>(
   (ref) => themeFor(ref.watch(paletteProvider)),
 );
+
+/// Low stimulus DERIVES the theme; it never writes one. `usesStocks: false`
+/// collapses every tile to `ground` behind its keyline — the dyed stocks go —
+/// and turning the mode off restores them, because nothing was overwritten. A
+/// pure function, no provider: provider count going up is a smell, not progress.
+AacTheme effectiveTheme(AacTheme base, {required bool lowStimulus}) =>
+    lowStimulus ? base.copyWith(usesStocks: false) : base;
+
+/// Low stimulus surfaces the 2-column layout. It DERIVES this from `lowStimulus`
+/// and never writes `grid_size`, so a user whose standing preference is already
+/// the large layout is not silently reset on the way out.
+GridSize effectiveGridSize(ReedSettings settings) =>
+    settings.lowStimulus ? GridSize.large : settings.gridSize;
 
 /// Returns the child unchanged. Route transitions are animations.
 class _NoTransitions extends PageTransitionsBuilder {
@@ -206,9 +221,22 @@ class ReedApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final palette = ref.watch(paletteProvider);
+    final lowStimulus = ref.watch(
+      settingsProvider.select((s) => s.lowStimulus),
+    );
+    final base = aacThemeData(palette);
+    // Apply the low-stimulus desaturation to the AacTheme extension only — the
+    // ColorScheme and every other slot stay. On the first frame, restored in
+    // main() before runApp, so a board in low stimulus never paints 12 dyed
+    // tiles and then reflows to undyed ones.
+    final theme = base.copyWith(
+      extensions: <ThemeExtension<dynamic>>[
+        effectiveTheme(themeFor(palette), lowStimulus: lowStimulus),
+      ],
+    );
     return MaterialApp(
       title: 'Reed',
-      theme: aacThemeData(palette),
+      theme: theme,
       // `darkTheme` is deliberately unset. With it null, MaterialApp uses
       // `theme` at every platform brightness — which is the point: the palette
       // decides, not the system.
