@@ -2,11 +2,17 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-/// The manifest carries three invariants that nothing else in the toolchain
-/// checks. Each is one line, each is silent when broken, and one of them makes
-/// the app mute on every device in the world.
+import 'policy_helpers.dart';
+
+/// The manifest carries invariants that nothing else in the toolchain checks.
+/// Each is one line, each is silent when broken, and one of them makes the app
+/// mute on every device in the world while another puts a survivor's board of
+/// intimate phrases in an adversary's Google Drive.
 void main() {
   final manifest = File('android/app/src/main/AndroidManifest.xml');
+  final rulesFile = File(
+    'android/app/src/main/res/xml/data_extraction_rules.xml',
+  );
   late String xml;
 
   setUpAll(() {
@@ -46,19 +52,62 @@ void main() {
       );
     });
 
-    test('disables cloud backup', () {
-      // Offline plus no account means the only backup is the user's own export.
-      // Cloud backup puts a board of intimate phrases on a provider's servers
-      // under keys the provider holds. The threat model is not abstract: "I am
-      // being hurt" implies an adversary who may be a caregiver or partner with
-      // account access.
-      expect(
-        xml,
-        contains('android:allowBackup="false"'),
-        reason:
-            'allowBackup must be false. Default is true: the board would '
-            'silently upload to a cloud provider.',
-      );
+    test('cloud backup is off, device transfer is preserved', () {
+      // Read through xmlOf so a comment that merely NAMES the rule cannot
+      // satisfy it: `<!-- android:allowBackup="false" -->` would pass a raw
+      // `contains` while the live attribute defaulted to true. Accumulate every
+      // offender and fail once, so one broken line does not hide the next.
+      final manifestXml = xmlOf(manifest);
+      final rulesXml = xmlOf(rulesFile);
+      final offenders = <String>[];
+
+      // allowBackup="false" is the pre-Android-12 lever. Default is true, which
+      // uploads the SQLite database — every phrase the user ever curated — to
+      // Google Drive, an account a caregiver or partner may hold.
+      if (!manifestXml.contains('android:allowBackup="false"')) {
+        offenders.add(
+          'android:allowBackup is not "false": the board uploads to the '
+          "user's Google Drive, where an abuser with account access reads "
+          '"I am being hurt".',
+        );
+      }
+
+      // dataExtractionRules is what Android 12+ (API 31+) reads instead. Setting
+      // only allowBackup leaves that version band on defaults.
+      if (!manifestXml.contains(
+        'android:dataExtractionRules="@xml/data_extraction_rules"',
+      )) {
+        offenders.add(
+          'android:dataExtractionRules is not wired to '
+          '@xml/data_extraction_rules: on Android 12+ the board reaches '
+          "the user's Google Drive despite allowBackup, same disclosure.",
+        );
+      }
+
+      // The rules file itself. A missing file makes xmlOf return '' — so these
+      // fail with a message instead of a FileSystemException out of the runner.
+      final cloud = xmlElement(rulesXml, 'cloud-backup');
+      if (cloud == null || cloud.contains('<include')) {
+        offenders.add(
+          'data_extraction_rules.xml <cloud-backup> is missing or contains an '
+          '<include>: whatever it includes is copied to Google Drive, where '
+          'the person the user is hiding phrases from can read them.',
+        );
+      }
+
+      // device-transfer is a DIFFERENT list on purpose: excluding the database
+      // here is the failure this config exists to avoid — the user's board does
+      // not survive a new phone and, with no telemetry, nobody ever learns.
+      final transfer = xmlElement(rulesXml, 'device-transfer');
+      if (transfer == null || !transfer.contains('<include')) {
+        offenders.add(
+          'data_extraction_rules.xml <device-transfer> has no <include>: the '
+          "user's hand-curated board does not survive a new phone and they "
+          'open to an empty grid.',
+        );
+      }
+
+      expect(offenders, isEmpty, reason: offenders.join('\n'));
     });
 
     test('requests no INTERNET permission, and never will', () {

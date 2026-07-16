@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:offline_aac/data/board_repository.dart';
-import 'package:offline_aac/data/crash_log.dart';
 import 'package:offline_aac/data/database/app_database.dart';
+import 'package:offline_aac/diagnostics/crash_log.dart';
 import 'package:offline_aac/model/aac_palette.dart';
 import 'package:offline_aac/model/board_grid.dart';
 import 'package:offline_aac/ui/app.dart';
@@ -51,7 +51,7 @@ void main() {
         overrides: <Override>[
           databaseProvider.overrideWithValue(db),
           speechServiceProvider.overrideWithValue(speech),
-          crashLogProvider.overrideWithValue(const CrashLog.discard()),
+          crashLogProvider.overrideWithValue(CrashLog.discard()),
           initialPaletteProvider.overrideWithValue(AacPalette.ink),
         ],
         child: const ReedApp(),
@@ -122,7 +122,7 @@ void main() {
         overrides: <Override>[
           databaseProvider.overrideWithValue(db),
           speechServiceProvider.overrideWithValue(speech),
-          crashLogProvider.overrideWithValue(const CrashLog.discard()),
+          crashLogProvider.overrideWithValue(CrashLog.discard()),
           initialPaletteProvider.overrideWithValue(AacPalette.ink),
           gridProvider.overrideWith((ref) => controller.stream),
         ],
@@ -181,15 +181,16 @@ void main() {
     Widget scope({
       required AppDatabase db,
       required Stream<BoardGrid> grid,
-      CrashLog log = const CrashLog.discard(),
+      CrashLog? log,
     }) {
+      final crashLog = log ?? CrashLog.discard();
       // No MediaQuery wrapper: a bare MediaQueryData() would zero the view size
       // that useDevice just pinned. ReedApp's own MediaQuery.fromView carries it.
       return ProviderScope(
         overrides: <Override>[
           databaseProvider.overrideWithValue(db),
           speechServiceProvider.overrideWithValue(FakeSpeechService()),
-          crashLogProvider.overrideWithValue(log),
+          crashLogProvider.overrideWithValue(crashLog),
           initialPaletteProvider.overrideWithValue(AacPalette.ink),
           gridProvider.overrideWith((ref) => grid),
         ],

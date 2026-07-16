@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:offline_aac/data/crash_log.dart';
 import 'package:offline_aac/data/database/backup.dart';
+import 'package:offline_aac/diagnostics/crash_log.dart';
 
 /// The backup is the last line of defence for the one asset the app cannot
 /// regenerate: a board of hand-curated phrases. These tests hold it to two
@@ -22,7 +22,7 @@ void main() {
     final result = await backupDatabaseFile(
       source: source,
       destination: dest,
-      log: const CrashLog.discard(),
+      log: CrashLog.discard(),
     );
 
     expect(result, isNotNull, reason: 'a successful backup returns the file');

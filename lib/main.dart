@@ -4,12 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:offline_aac/data/board_repository.dart';
-import 'package:offline_aac/data/crash_log.dart';
 import 'package:offline_aac/data/database/app_database.dart';
 import 'package:offline_aac/data/settings_repository.dart';
 import 'package:offline_aac/data/speech/audio_session_config.dart';
 import 'package:offline_aac/data/speech/flutter_tts_speech_service.dart';
 import 'package:offline_aac/data/speech/speech_service.dart';
+import 'package:offline_aac/diagnostics/crash_log.dart';
 import 'package:offline_aac/ui/app.dart';
 import 'package:offline_aac/ui/board/board_controller.dart';
 import 'package:offline_aac/ui/settings/settings_controller.dart';
@@ -35,10 +35,12 @@ Future<void> main() async {
   // invisible forever.
   final log = await CrashLog.open();
 
-  // Errors inside Flutter's build/layout/paint callbacks.
+  // Errors inside Flutter's build/layout/paint callbacks. Unwrapped first: a
+  // provider failure arrives wrapped, and logging the wrapper flattens every
+  // entry to the same useless line.
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
-    log.record(details.exceptionAsString(), details.stack);
+    log.record(unwrapError(details.exception).toString(), details.stack);
   };
 
   // Uncaught async errors outside the framework's callbacks — including
@@ -46,7 +48,7 @@ Future<void> main() async {
   // installed before the database is touched.
   PlatformDispatcher.instance.onError = (error, stack) {
     try {
-      log.record(error.toString(), stack);
+      log.record(unwrapError(error).toString(), stack);
       if (kDebugMode) debugPrint('$error\n$stack');
       // The reason is the block below; the suppression stays with it.
       // ignore: avoid_catches_without_on_clauses
@@ -67,6 +69,15 @@ Future<void> main() async {
   final settings = await _loadSettings(db, log);
   await configureAudioSession();
 
+  // The redaction net's live source: every phrase on the board, so an exception
+  // whose toString() smuggles one into a log line is scrubbed before it reaches
+  // a file the user might mail out. Wired HERE — after the DB is open — because
+  // CrashLog.open() ran before it, deliberately, with an empty source; a crash
+  // during DB open has nothing loaded to leak. The board surface keeps this in
+  // step with edits via redactionRegistryProvider.
+  final redactions = RedactionRegistry();
+  log.redactWith(redactions.snapshot);
+
   // Read at speak time, never captured: Android garbage-collects voice data, so
   // the answer changes under us. It stays null until the post-frame re-resolve
   // below, and speak() reports null as words on screen rather than silence. The
@@ -82,6 +93,9 @@ Future<void> main() async {
         speechServiceProvider.overrideWithValue(speech),
         currentVoiceProvider.overrideWithValue(currentVoice),
         crashLogProvider.overrideWithValue(log),
+        // The one registry the log's net reads, so the board surface's updates
+        // reach the same instance record() scrubs against.
+        redactionRegistryProvider.overrideWithValue(redactions),
         // Restored BEFORE first paint, not corrected on frame 2. A flash of the
         // wrong polarity is a sudden luminance change delivered to someone in a
         // shutdown — the exact event the animation ban exists to prevent.

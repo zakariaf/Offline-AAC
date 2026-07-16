@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:offline_aac/data/board_repository.dart';
-import 'package:offline_aac/data/crash_log.dart';
 import 'package:offline_aac/data/speech/speech_service.dart';
+import 'package:offline_aac/diagnostics/crash_log.dart';
 import 'package:offline_aac/model/board_grid.dart';
 import 'package:offline_aac/model/speak_outcome.dart';
 import 'package:offline_aac/speech/speech_controller.dart';
@@ -40,6 +40,14 @@ final Provider<CurrentVoice> currentVoiceProvider = Provider<CurrentVoice>(
 final Provider<CrashLog> crashLogProvider = Provider<CrashLog>(
   (ref) => throw UnimplementedError('crashLogProvider must be overridden'),
 );
+
+/// The set of phrases the log's redaction net scrubs, kept in step with the live
+/// board by `BoardScreen`. Defaults to an empty registry rather than throwing —
+/// unlike [crashLogProvider], a test that never touches redaction should not have
+/// to override it, and an empty net is a safe no-op. `main()` overrides it with
+/// the one instance the [CrashLog] was pointed at.
+final Provider<RedactionRegistry> redactionRegistryProvider =
+    Provider<RedactionRegistry>((ref) => RedactionRegistry());
 
 /// The board, live from disk.
 ///

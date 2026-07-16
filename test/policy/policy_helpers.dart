@@ -110,6 +110,34 @@ String stripComments(String source) {
   return out.toString();
 }
 
+/// [file]'s XML with `<!-- ... -->` comments removed.
+///
+/// Manifest and resource assertions must read through this: a raw `contains`
+/// over source text is satisfied by a comment that merely NAMES the rule — so
+/// `<!-- never set allowBackup="false" -->` would pass a test asserting the
+/// attribute is present, and the app would silently upload the board to Google
+/// Drive with a green suite. Stripping comments first makes the assertion read
+/// the configuration, not the documentation of it.
+///
+/// A missing file returns the empty string rather than throwing, so a deleted
+/// resource FAILS the assertion that expects its content instead of blowing up
+/// the whole test file with a `FileSystemException`.
+String xmlOf(File file) =>
+    file.existsSync() ? file.readAsStringSync().replaceAll(_xmlComment, '') : '';
+
+final RegExp _xmlComment = RegExp('<!--.*?-->', dotAll: true);
+
+/// The inner content of the first `<tag ...>...</tag>` in [xml], or null when
+/// the element is absent. [xml] should already be comment-stripped via [xmlOf].
+///
+/// Anchors an assertion to a specific element: "does `<cloud-backup>` contain an
+/// `<include>`" is a different, and correct, question from "does the file
+/// contain an `<include>` anywhere".
+String? xmlElement(String xml, String tag) =>
+    RegExp('<$tag(?:\\s[^>]*)?>(.*?)</$tag>', dotAll: true)
+        .firstMatch(xml)
+        ?.group(1);
+
 /// `file:line` for every line of [source] matching [pattern], 1-indexed.
 ///
 /// A failure message that names the file and line is actionable at 2am; one

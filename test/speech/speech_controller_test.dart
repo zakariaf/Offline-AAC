@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:offline_aac/data/crash_log.dart';
+import 'package:offline_aac/diagnostics/crash_log.dart';
 import 'package:offline_aac/speech/speech_controller.dart';
 
 import '../support/fake_speech_service.dart';

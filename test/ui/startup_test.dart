@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:offline_aac/data/board_repository.dart';
-import 'package:offline_aac/data/crash_log.dart';
 import 'package:offline_aac/data/database/app_database.dart';
+import 'package:offline_aac/diagnostics/crash_log.dart';
 import 'package:offline_aac/model/board_grid.dart';
 import 'package:offline_aac/ui/app.dart';
 import 'package:offline_aac/ui/board/board_controller.dart';
@@ -41,7 +41,7 @@ void main() {
       overrides: [
         databaseProvider.overrideWithValue(db),
         speechServiceProvider.overrideWithValue(withSpeech ?? speech),
-        crashLogProvider.overrideWithValue(const CrashLog.discard()),
+        crashLogProvider.overrideWithValue(CrashLog.discard()),
         initialPaletteProvider.overrideWithValue(palette),
         // A canned grid, not the live database stream. These tests are about the
         // launch frame and the theme, not the data layer — the repository tests

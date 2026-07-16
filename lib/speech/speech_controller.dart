@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:offline_aac/data/crash_log.dart';
 import 'package:offline_aac/data/speech/speech_service.dart';
+import 'package:offline_aac/diagnostics/crash_log.dart';
 import 'package:offline_aac/model/speak_outcome.dart';
 
 /// The speak path, with the app's worst bug made unrepresentable.

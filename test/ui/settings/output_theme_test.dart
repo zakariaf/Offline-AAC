@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:offline_aac/data/board_repository.dart' show databaseProvider;
-import 'package:offline_aac/data/crash_log.dart';
 import 'package:offline_aac/data/database/app_database.dart';
 import 'package:offline_aac/data/speech/speech_service.dart' show OutputMode;
+import 'package:offline_aac/diagnostics/crash_log.dart';
 import 'package:offline_aac/model/aac_palette.dart';
 import 'package:offline_aac/model/board_grid.dart';
 import 'package:offline_aac/ui/app.dart';
@@ -136,7 +136,7 @@ void main() {
         overrides: <Override>[
           databaseProvider.overrideWithValue(db),
           speechServiceProvider.overrideWithValue(FakeSpeechService()),
-          crashLogProvider.overrideWithValue(const CrashLog.discard()),
+          crashLogProvider.overrideWithValue(CrashLog.discard()),
           initialPaletteProvider.overrideWithValue(AacPalette.paper),
           // Canned grid, so the live drift stream (and the timer it leaks under
           // a widget test's fake clock) stays out of this theme-only test.

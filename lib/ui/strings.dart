@@ -66,6 +66,27 @@ const String keepOffBackupChrome = 'Keep my board off cloud backup';
 /// Restore is a labelled control, never a hidden gesture.
 const String restoreBoardChrome = 'Restore previous board';
 
+/// Export and import — the whole backup story once cloud backup is off. Sentence
+/// register, like the two rows above. Nothing about where the file goes once the
+/// share sheet has it: the export is plaintext and contains phrases like "I am
+/// being hurt", and the adversary here often has access to the phone account.
+const String exportBoardChrome = 'Export my board';
+const String importBoardChrome = 'Import a board';
+
+/// Results and errors: statement, then the next action. No apology, no "we", no
+/// exclamation, no ellipsis, no modal. Curly apostrophes. Engine codes, zip entry
+/// names and SqliteException text go to the log line, never here.
+const String importOkResult =
+    'Board imported. The board you had is still here — switch back in settings.';
+const String importNotReedResult =
+    'That file isn’t a Reed board. Pick another file.';
+const String importNeedsNewerResult =
+    'That board needs a newer version of Reed. Update Reed, then import again.';
+const String importFailedResult =
+    'That board didn’t import. Nothing on this phone changed.';
+const String exportFailedResult =
+    'That export didn’t finish. No file was created.';
+
 /// Haptics and low stimulus — the two a person reaches for mid-episode.
 const String hapticsOnChrome = 'haptics: on';
 const String hapticsOffChrome = 'haptics: off';

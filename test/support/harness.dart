@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:offline_aac/data/board_repository.dart';
-import 'package:offline_aac/data/crash_log.dart';
 import 'package:offline_aac/data/database/app_database.dart';
+import 'package:offline_aac/diagnostics/crash_log.dart';
 import 'package:offline_aac/model/aac_palette.dart';
 import 'package:offline_aac/model/board_grid.dart';
 import 'package:offline_aac/ui/app.dart';
@@ -67,9 +67,13 @@ extension AacHarness on WidgetTester {
     bool boldText = false,
     AppDatabase? db,
     AacPalette palette = AacPalette.ink,
-    CrashLog crashLog = const CrashLog.discard(),
+    CrashLog? crashLog,
     bool editing = false,
   }) async {
+    // CrashLog is no longer const-constructible (it holds a mutable redaction
+    // source), so a `const CrashLog.discard()` default is out; resolve the
+    // fallback here instead.
+    final log = crashLog ?? CrashLog.discard();
     // The board sizes its columns by MEASURING labels, so the whole suite must
     // render the shipped face. Under the default Ahem test font the fat glyphs
     // collapse the grid to one scrolling column even at 1x, pushing tiles
@@ -82,7 +86,7 @@ extension AacHarness on WidgetTester {
     final overrides = <Override>[
       databaseProvider.overrideWithValue(database),
       speechServiceProvider.overrideWithValue(speech ?? FakeSpeechService()),
-      crashLogProvider.overrideWithValue(crashLog),
+      crashLogProvider.overrideWithValue(log),
       initialPaletteProvider.overrideWithValue(palette),
     ];
     // With a real database, use its live grid; otherwise a canned fixture keeps

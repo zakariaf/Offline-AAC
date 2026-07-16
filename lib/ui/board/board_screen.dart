@@ -52,6 +52,21 @@ class BoardScreen extends ConsumerWidget {
     // listen, not read — a side effect in a build body is a side effect per
     // rebuild.
     ref.listen<AsyncValue<BoardGrid>>(gridProvider, (previous, next) {
+      final grid = next.valueOrNull;
+      if (grid != null) {
+        // Keep the crash log's redaction net current with the board: every
+        // phrase here is a string that must never surface in an exported log if
+        // an exception's toString() ever smuggles it into a line. Hidden tiles
+        // included — a hidden phrase is still the user's, and still on disk.
+        ref.read(redactionRegistryProvider).replaceWith(<String>[
+          for (final tile in grid.tiles)
+            if (tile != null) ...<String>[
+              tile.label,
+              tile.vocalization,
+              tile.displayText,
+            ],
+        ]);
+      }
       final error = next.error;
       if (error == null) return;
       ref

@@ -4,6 +4,7 @@ import 'package:offline_aac/data/settings_repository.dart';
 import 'package:offline_aac/data/speech/speech_service.dart' show OutputMode;
 import 'package:offline_aac/ui/app.dart';
 import 'package:offline_aac/ui/core/tokens.dart';
+import 'package:offline_aac/ui/settings/portability_controller.dart';
 import 'package:offline_aac/ui/settings/settings_controller.dart';
 import 'package:offline_aac/ui/strings.dart';
 
@@ -283,6 +284,58 @@ class RestoreBoardControl extends StatelessWidget {
       semanticLabel: restoreBoardChrome,
       onTap: () {},
       child: const _TextFace(restoreBoardChrome),
+    );
+  }
+}
+
+/// `Export my board` — build the zip and hand it to the OS share sheet. Calls a
+/// VOID controller method: an `onTap: () => controller.export()` arrow would drop
+/// the Future and its error against the VoidCallback target, and the user would
+/// tap and get silence — the worst bug here.
+class ExportBoardControl extends ConsumerWidget {
+  const ExportBoardControl({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return SettingsRow(
+      semanticLabel: exportBoardChrome,
+      onTap: () =>
+          ref.read(portabilityControllerProvider.notifier).exportBoard(),
+      child: const _TextFace(exportBoardChrome),
+    );
+  }
+}
+
+/// `Import a board` — pick a file and import it as a NEW board, never over the
+/// board already here. Void method, same reason as export.
+class ImportBoardControl extends ConsumerWidget {
+  const ImportBoardControl({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return SettingsRow(
+      semanticLabel: importBoardChrome,
+      onTap: () =>
+          ref.read(portabilityControllerProvider.notifier).importBoard(),
+      child: const _TextFace(importBoardChrome),
+    );
+  }
+}
+
+/// The inline result line for an export or import — statement, then the next
+/// action, never a modal. Absent (zero height) when there is nothing to say, so
+/// it never occupies space or reads as an instruction before the user acts.
+class PortabilityResult extends ConsumerWidget {
+  const PortabilityResult({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final message = ref.watch(portabilityControllerProvider);
+    if (message == null) return const SizedBox.shrink();
+    final t = AacTheme.of(context);
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(bottom: 14),
+      child: Text(message, style: AacType.field.copyWith(color: t.ink)),
     );
   }
 }

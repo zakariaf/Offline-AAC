@@ -1,4 +1,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- NEVER set android:allowBackup="true", and never delete the
+         dataExtractionRules line below. Both together are the ONLY thing that
+         keeps the board off Google Drive. The default (true) uploads the SQLite
+         database — every phrase the user has ever curated — to an account a
+         caregiver or partner may hold. The threat model is not abstract: a board
+         holds phrases like "I am being hurt". This is a safety accommodation,
+         not a preference, and it is one line of XML from being silently untrue.
+         Do NOT "improve" it into an encrypted cloud backup: encrypted backups
+         still leave the device and still assume a screen lock this population
+         may not have. Off is a stronger promise than encrypted.
+         A policy test (test/policy/android_manifest_policy_test.dart) fails the
+         moment this regresses. -->
     <application
         android:label="Reed"
         android:allowBackup="false"

@@ -46,6 +46,11 @@ class SettingsScreen extends ConsumerWidget {
                 TileCountControl(),
                 ShowSettingsSection(),
                 KeepOffBackupControl(),
+                // Export/import — the whole durability story once cloud backup
+                // is off. The result line sits directly beneath the two rows.
+                ExportBoardControl(),
+                ImportBoardControl(),
+                PortabilityResult(),
                 RestoreBoardControl(),
               ],
             ),

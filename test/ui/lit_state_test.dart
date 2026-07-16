@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:offline_aac/data/crash_log.dart';
+import 'package:offline_aac/diagnostics/crash_log.dart';
 import 'package:offline_aac/model/board_grid.dart';
 import 'package:offline_aac/ui/board/phrase_tile.dart';
 

@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:offline_aac/data/crash_log.dart';
+import 'package:offline_aac/diagnostics/crash_log.dart';
 
 /// Copies the database file aside before a schema upgrade runs.
 ///

@@ -11,8 +11,10 @@ version: 0.1.0+1
 environment:
   sdk: ^3.12.2
 
-# Six direct dependencies. Every one is here because it cannot be written or
-# faked in-process. Before adding a seventh, run:
+# Nine direct dependencies. Every one is here because it cannot be written or
+# faked in-process. The last three (archive, file_selector, share_plus) landed
+# with E09-T01 export/import — the entire backup story once cloud backup is off.
+# Before adding a tenth, run:
 #
 #   dart pub deps --json > /tmp/deps.json
 #   python3 .claude/skills/reed-dependency-hygiene/scripts/audit_deps.py /tmp/deps.json
@@ -20,13 +22,32 @@ environment:
 # It fails on anything that opens a network path, reports crashes or usage,
 # drags in Firebase, or collects device identifiers — checking the resolved
 # tree, not the pubspec, because the second hop is where those arrive.
+# file_selector pulls `http` transitively (its platform interface); that adds no
+# Android permission — verified by test/policy/no_internet_permission_test — but
+# it is why the audit checks the resolved tree, not the pubspec.
 dependencies:
+  # ── Export/import: the ENTIRE backup story once cloud backup is off ────────
+  # archive, share_plus and file_selector are here because none can be written
+  # in-process, and each is audited against the manifest merger by
+  # test/policy/no_internet_permission_test — the strongest asset the product has
+  # is that the OS itself can prove there is no INTERNET permission, and a
+  # share/picker plugin that merged one in would break that claim silently. They
+  # sit in their alphabetical slots (sort_pub_dependencies) rather than grouped.
+  #
+  # archive: pure-Dart zip read/write, no platform channel, no network.
+  archive: ^3.6.1
+
   # The iOS audio session category. `.playback`, never `.ambient` — the ambient
   # category lets the hardware silent switch mute the app, which means a user
   # flips their ringer switch for a meeting and loses their voice.
   audio_session: ^0.2.4
 
   drift: ^2.34.2
+
+  # file_selector: the OS document picker for import. NOT file_picker, which is
+  # heavier and has historically merged extra Android permissions; file_selector
+  # is the flutter.dev-published, permission-light option. No URL scheme, ever.
+  file_selector: ^1.1.0
 
   flutter:
     sdk: flutter
@@ -42,6 +63,11 @@ dependencies:
 
   path: ^1.9.1
   path_provider: ^2.1.6
+
+  # share_plus: hands the finished export zip to the OS share sheet. The app
+  # never sends the file — the user does, to a destination the app never sees or
+  # names. No network path of its own.
+  share_plus: ^10.1.4
 
   # NOT sqlite3_flutter_libs: that package is end-of-life as of Feb 2026
   # ("Not used anymore, update to version 3.x of package:sqlite3 instead") and
