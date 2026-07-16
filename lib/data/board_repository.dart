@@ -338,6 +338,7 @@ final class BoardRepository {
       displayText: button.displayText ?? (button.vocalization ?? button.label),
       hidden: button.hidden,
       isSystem: button.isSystem,
+      priority: button.priority,
       // Handed on RELATIVE, exactly as stored. The DB lives in the support
       // directory and media lives under documents; joining a media path against
       // the wrong base fails silently, permanently, invisibly. The helper that

@@ -271,6 +271,7 @@ Future<void> seedStarterBoard(AppDatabase db) async {
             vocalization: Value<String?>(phrase.says),
             backgroundColor: Value<String?>(phrase.stock.name),
             isSystem: Value<bool>(phrase.isSystem),
+            priority: Value<int>(phrase.priority),
           ),
         );
     await (db.update(db.gridSlots)..where(

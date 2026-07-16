@@ -1,3 +1,4 @@
 *.g.dart linguist-generated=true
 *.drift.dart linguist-generated=true
 drift_schemas/** linguist-generated=true
+*.steps.dart linguist-generated=true

@@ -63,17 +63,21 @@ void main() {
     });
   });
 
-  test('every phrase survives a migration, byte for byte', () async {
-    // testWithDataIntegrity writes the fixture at the old version, runs the real
-    // database's migration, and reads back at the new version. At v1 old==new,
-    // so this is a degenerate migration today — but the assertions are the ones
-    // that will catch a v2 that silently drops a column's data, and the fixture
-    // is already in place to catch it.
+  test('every phrase survives the v1 -> v2 migration, byte for byte', () async {
+    // Writes the fixture at v1 (before buttons.priority existed), runs the real
+    // database's onUpgrade, and reads it back through the current schema. This
+    // is a genuine migration now: the v1->v2 column add must leave every phrase
+    // exactly as it was and default the new column, or someone's board is
+    // silently altered on the update that adds a feature they never asked about.
+    //
+    // createNew is the real AppDatabase, not a versioned stub: only the OLD
+    // side needs the frozen v1 classes to write pre-migration rows; the new
+    // side is just the app.
     await verifier.testWithDataIntegrity(
-      oldVersion: kLatestSchemaVersion,
+      oldVersion: 1,
       newVersion: kLatestSchemaVersion,
       createOld: v1.DatabaseAtV1.new,
-      createNew: v1.DatabaseAtV1.new,
+      createNew: AppDatabase.forTesting,
       openTestedDatabase: AppDatabase.forTesting,
       createItems: (batch, db) {
         // A 2x3 board: five phrases and one deliberately empty slot, so the
@@ -145,6 +149,20 @@ void main() {
             reason:
                 'the phrase "${phrase.label}" did not survive intact — '
                 'this is someone’s voice, and it is unrecoverable',
+          );
+        }
+
+        // The v1->v2 column exists after the migration and every pre-existing
+        // button carries its default. A migration that added the column NOT
+        // NULL with no default would have failed to apply; one that added it
+        // wrong would leave a null here.
+        for (final b in buttons) {
+          expect(
+            b.priority,
+            equals(1000),
+            reason:
+                'a button migrated from v1 must take the priority default, not '
+                'a null or a garbage value',
           );
         }
 

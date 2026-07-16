@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:offline_aac/model/board_grid.dart';
 import 'package:offline_aac/ui/core/tokens.dart';
@@ -108,6 +109,14 @@ class PhraseTile extends StatelessWidget {
     return Semantics(
       container: true,
       button: true,
+      // Traversal order is a design decision, and by default it is nobody's.
+      // Row-major reading plus the lower-centre thumb arc would make the most
+      // important phrase the 8th-to-11th thing announced — eight seconds under
+      // linear autoscan. This decouples the order a screen reader visits from
+      // the order tiles sit on screen: lowest priority is read first, while the
+      // tile stays put. Authored from the button's priority, never inherited
+      // from layout by accident.
+      sortKey: OrdinalSortKey(phrase.priority.toDouble()),
       // The DISPLAY label. Nothing in the type system tells these three Strings
       // apart, and a scanning user must hear "Overwhelmed" on every step, not
       // the whole sentence.

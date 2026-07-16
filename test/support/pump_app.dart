@@ -58,6 +58,7 @@ BoardGrid cannedGrid({String phrase = 'I need a minute', int count = 1}) {
     displayText: says,
     hidden: false,
     isSystem: false,
+    priority: i + 1,
   );
   final tiles = <Tile?>[tile(0, 'Minute', phrase)];
   if (count > 1) tiles.add(tile(1, 'Leave', 'I need to leave'));

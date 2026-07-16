@@ -72,6 +72,15 @@ class Buttons extends Table {
   BoolColumn get userEdited =>
       boolean().named('user_edited').withDefault(const Constant(false))();
 
+  /// Screen-reader and switch-scan order, decoupled from screen position.
+  ///
+  /// The highest-value phrases sit in the lower-centre arc for the thumb, but a
+  /// linear scanner reads top-to-bottom, so without this the most important
+  /// phrase is the 8th-to-11th thing announced — eight seconds under autoscan
+  /// for someone who needs to say "I need to leave". This is the sort key that
+  /// puts it first in traversal while it stays put on screen. Lower is earlier.
+  IntColumn get priority => integer().withDefault(const Constant(1000))();
+
   TextColumn get backgroundColor =>
       text().named('background_color').nullable()();
   TextColumn get borderColor => text().named('border_color').nullable()();

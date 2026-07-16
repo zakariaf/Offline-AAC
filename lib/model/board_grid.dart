@@ -22,6 +22,7 @@ final class Tile {
     required this.displayText,
     required this.hidden,
     required this.isSystem,
+    required this.priority,
     this.imagePath,
     this.imageAttribution,
     this.backgroundColor,
@@ -54,6 +55,11 @@ final class Tile {
   /// than trusting the UI not to offer it.
   final bool isSystem;
 
+  /// Screen-reader and switch-scan order — lower is announced first — decoupled
+  /// from screen position, so the most-needed phrase in the lower-centre arc is
+  /// read first rather than eighth. Drives the tile's `OrdinalSortKey`.
+  final int priority;
+
   /// RELATIVE to the app documents directory, exactly as stored. Never joined
   /// here: the DB file lives in the SUPPORT directory, and a path built from
   /// the wrong base fails silently, permanently, invisibly. Resolve it through
@@ -79,6 +85,7 @@ final class Tile {
           other.displayText == displayText &&
           other.hidden == hidden &&
           other.isSystem == isSystem &&
+          other.priority == priority &&
           other.imagePath == imagePath &&
           other.imageAttribution == imageAttribution &&
           other.backgroundColor == backgroundColor &&
@@ -94,6 +101,7 @@ final class Tile {
     displayText,
     hidden,
     isSystem,
+    priority,
     imagePath,
     imageAttribution,
     backgroundColor,

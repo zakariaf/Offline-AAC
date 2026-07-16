@@ -1366,6 +1366,18 @@ class $ButtonsTable extends Buttons with TableInfo<$ButtonsTable, Button> {
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _priorityMeta = const VerificationMeta(
+    'priority',
+  );
+  @override
+  late final GeneratedColumn<int> priority = GeneratedColumn<int>(
+    'priority',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1000),
+  );
   static const VerificationMeta _backgroundColorMeta = const VerificationMeta(
     'backgroundColor',
   );
@@ -1461,6 +1473,7 @@ class $ButtonsTable extends Buttons with TableInfo<$ButtonsTable, Button> {
     hidden,
     isSystem,
     userEdited,
+    priority,
     backgroundColor,
     borderColor,
     imageId,
@@ -1534,6 +1547,12 @@ class $ButtonsTable extends Buttons with TableInfo<$ButtonsTable, Button> {
       context.handle(
         _userEditedMeta,
         userEdited.isAcceptableOrUnknown(data['user_edited']!, _userEditedMeta),
+      );
+    }
+    if (data.containsKey('priority')) {
+      context.handle(
+        _priorityMeta,
+        priority.isAcceptableOrUnknown(data['priority']!, _priorityMeta),
       );
     }
     if (data.containsKey('background_color')) {
@@ -1628,6 +1647,10 @@ class $ButtonsTable extends Buttons with TableInfo<$ButtonsTable, Button> {
         DriftSqlType.bool,
         data['${effectivePrefix}user_edited'],
       )!,
+      priority: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}priority'],
+      )!,
       backgroundColor: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}background_color'],
@@ -1699,6 +1722,15 @@ class Button extends DataClass implements Insertable<Button> {
   /// migration, not in a seed step, not in a default-set update. User data is
   /// unmergeable ground truth.
   final bool userEdited;
+
+  /// Screen-reader and switch-scan order, decoupled from screen position.
+  ///
+  /// The highest-value phrases sit in the lower-centre arc for the thumb, but a
+  /// linear scanner reads top-to-bottom, so without this the most important
+  /// phrase is the 8th-to-11th thing announced — eight seconds under autoscan
+  /// for someone who needs to say "I need to leave". This is the sort key that
+  /// puts it first in traversal while it stays put on screen. Lower is earlier.
+  final int priority;
   final String? backgroundColor;
   final String? borderColor;
   final int? imageId;
@@ -1717,6 +1749,7 @@ class Button extends DataClass implements Insertable<Button> {
     required this.hidden,
     required this.isSystem,
     required this.userEdited,
+    required this.priority,
     this.backgroundColor,
     this.borderColor,
     this.imageId,
@@ -1740,6 +1773,7 @@ class Button extends DataClass implements Insertable<Button> {
     map['hidden'] = Variable<bool>(hidden);
     map['is_system'] = Variable<bool>(isSystem);
     map['user_edited'] = Variable<bool>(userEdited);
+    map['priority'] = Variable<int>(priority);
     if (!nullToAbsent || backgroundColor != null) {
       map['background_color'] = Variable<String>(backgroundColor);
     }
@@ -1774,6 +1808,7 @@ class Button extends DataClass implements Insertable<Button> {
       hidden: Value(hidden),
       isSystem: Value(isSystem),
       userEdited: Value(userEdited),
+      priority: Value(priority),
       backgroundColor: backgroundColor == null && nullToAbsent
           ? const Value.absent()
           : Value(backgroundColor),
@@ -1808,6 +1843,7 @@ class Button extends DataClass implements Insertable<Button> {
       hidden: serializer.fromJson<bool>(json['hidden']),
       isSystem: serializer.fromJson<bool>(json['isSystem']),
       userEdited: serializer.fromJson<bool>(json['userEdited']),
+      priority: serializer.fromJson<int>(json['priority']),
       backgroundColor: serializer.fromJson<String?>(json['backgroundColor']),
       borderColor: serializer.fromJson<String?>(json['borderColor']),
       imageId: serializer.fromJson<int?>(json['imageId']),
@@ -1829,6 +1865,7 @@ class Button extends DataClass implements Insertable<Button> {
       'hidden': serializer.toJson<bool>(hidden),
       'isSystem': serializer.toJson<bool>(isSystem),
       'userEdited': serializer.toJson<bool>(userEdited),
+      'priority': serializer.toJson<int>(priority),
       'backgroundColor': serializer.toJson<String?>(backgroundColor),
       'borderColor': serializer.toJson<String?>(borderColor),
       'imageId': serializer.toJson<int?>(imageId),
@@ -1848,6 +1885,7 @@ class Button extends DataClass implements Insertable<Button> {
     bool? hidden,
     bool? isSystem,
     bool? userEdited,
+    int? priority,
     Value<String?> backgroundColor = const Value.absent(),
     Value<String?> borderColor = const Value.absent(),
     Value<int?> imageId = const Value.absent(),
@@ -1864,6 +1902,7 @@ class Button extends DataClass implements Insertable<Button> {
     hidden: hidden ?? this.hidden,
     isSystem: isSystem ?? this.isSystem,
     userEdited: userEdited ?? this.userEdited,
+    priority: priority ?? this.priority,
     backgroundColor: backgroundColor.present
         ? backgroundColor.value
         : this.backgroundColor,
@@ -1890,6 +1929,7 @@ class Button extends DataClass implements Insertable<Button> {
       userEdited: data.userEdited.present
           ? data.userEdited.value
           : this.userEdited,
+      priority: data.priority.present ? data.priority.value : this.priority,
       backgroundColor: data.backgroundColor.present
           ? data.backgroundColor.value
           : this.backgroundColor,
@@ -1917,6 +1957,7 @@ class Button extends DataClass implements Insertable<Button> {
           ..write('hidden: $hidden, ')
           ..write('isSystem: $isSystem, ')
           ..write('userEdited: $userEdited, ')
+          ..write('priority: $priority, ')
           ..write('backgroundColor: $backgroundColor, ')
           ..write('borderColor: $borderColor, ')
           ..write('imageId: $imageId, ')
@@ -1938,6 +1979,7 @@ class Button extends DataClass implements Insertable<Button> {
     hidden,
     isSystem,
     userEdited,
+    priority,
     backgroundColor,
     borderColor,
     imageId,
@@ -1958,6 +2000,7 @@ class Button extends DataClass implements Insertable<Button> {
           other.hidden == this.hidden &&
           other.isSystem == this.isSystem &&
           other.userEdited == this.userEdited &&
+          other.priority == this.priority &&
           other.backgroundColor == this.backgroundColor &&
           other.borderColor == this.borderColor &&
           other.imageId == this.imageId &&
@@ -1976,6 +2019,7 @@ class ButtonsCompanion extends UpdateCompanion<Button> {
   final Value<bool> hidden;
   final Value<bool> isSystem;
   final Value<bool> userEdited;
+  final Value<int> priority;
   final Value<String?> backgroundColor;
   final Value<String?> borderColor;
   final Value<int?> imageId;
@@ -1992,6 +2036,7 @@ class ButtonsCompanion extends UpdateCompanion<Button> {
     this.hidden = const Value.absent(),
     this.isSystem = const Value.absent(),
     this.userEdited = const Value.absent(),
+    this.priority = const Value.absent(),
     this.backgroundColor = const Value.absent(),
     this.borderColor = const Value.absent(),
     this.imageId = const Value.absent(),
@@ -2009,6 +2054,7 @@ class ButtonsCompanion extends UpdateCompanion<Button> {
     this.hidden = const Value.absent(),
     this.isSystem = const Value.absent(),
     this.userEdited = const Value.absent(),
+    this.priority = const Value.absent(),
     this.backgroundColor = const Value.absent(),
     this.borderColor = const Value.absent(),
     this.imageId = const Value.absent(),
@@ -2027,6 +2073,7 @@ class ButtonsCompanion extends UpdateCompanion<Button> {
     Expression<bool>? hidden,
     Expression<bool>? isSystem,
     Expression<bool>? userEdited,
+    Expression<int>? priority,
     Expression<String>? backgroundColor,
     Expression<String>? borderColor,
     Expression<int>? imageId,
@@ -2044,6 +2091,7 @@ class ButtonsCompanion extends UpdateCompanion<Button> {
       if (hidden != null) 'hidden': hidden,
       if (isSystem != null) 'is_system': isSystem,
       if (userEdited != null) 'user_edited': userEdited,
+      if (priority != null) 'priority': priority,
       if (backgroundColor != null) 'background_color': backgroundColor,
       if (borderColor != null) 'border_color': borderColor,
       if (imageId != null) 'image_id': imageId,
@@ -2063,6 +2111,7 @@ class ButtonsCompanion extends UpdateCompanion<Button> {
     Value<bool>? hidden,
     Value<bool>? isSystem,
     Value<bool>? userEdited,
+    Value<int>? priority,
     Value<String?>? backgroundColor,
     Value<String?>? borderColor,
     Value<int?>? imageId,
@@ -2080,6 +2129,7 @@ class ButtonsCompanion extends UpdateCompanion<Button> {
       hidden: hidden ?? this.hidden,
       isSystem: isSystem ?? this.isSystem,
       userEdited: userEdited ?? this.userEdited,
+      priority: priority ?? this.priority,
       backgroundColor: backgroundColor ?? this.backgroundColor,
       borderColor: borderColor ?? this.borderColor,
       imageId: imageId ?? this.imageId,
@@ -2117,6 +2167,9 @@ class ButtonsCompanion extends UpdateCompanion<Button> {
     if (userEdited.present) {
       map['user_edited'] = Variable<bool>(userEdited.value);
     }
+    if (priority.present) {
+      map['priority'] = Variable<int>(priority.value);
+    }
     if (backgroundColor.present) {
       map['background_color'] = Variable<String>(backgroundColor.value);
     }
@@ -2152,6 +2205,7 @@ class ButtonsCompanion extends UpdateCompanion<Button> {
           ..write('hidden: $hidden, ')
           ..write('isSystem: $isSystem, ')
           ..write('userEdited: $userEdited, ')
+          ..write('priority: $priority, ')
           ..write('backgroundColor: $backgroundColor, ')
           ..write('borderColor: $borderColor, ')
           ..write('imageId: $imageId, ')
@@ -3806,6 +3860,7 @@ typedef $$ButtonsTableCreateCompanionBuilder =
       Value<bool> hidden,
       Value<bool> isSystem,
       Value<bool> userEdited,
+      Value<int> priority,
       Value<String?> backgroundColor,
       Value<String?> borderColor,
       Value<int?> imageId,
@@ -3824,6 +3879,7 @@ typedef $$ButtonsTableUpdateCompanionBuilder =
       Value<bool> hidden,
       Value<bool> isSystem,
       Value<bool> userEdited,
+      Value<int> priority,
       Value<String?> backgroundColor,
       Value<String?> borderColor,
       Value<int?> imageId,
@@ -3948,6 +4004,11 @@ class $$ButtonsTableFilterComposer
 
   ColumnFilters<bool> get userEdited => $composableBuilder(
     column: $table.userEdited,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get priority => $composableBuilder(
+    column: $table.priority,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4115,6 +4176,11 @@ class $$ButtonsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get priority => $composableBuilder(
+    column: $table.priority,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get backgroundColor => $composableBuilder(
     column: $table.backgroundColor,
     builder: (column) => ColumnOrderings(column),
@@ -4245,6 +4311,9 @@ class $$ButtonsTableAnnotationComposer
     column: $table.userEdited,
     builder: (column) => column,
   );
+
+  GeneratedColumn<int> get priority =>
+      $composableBuilder(column: $table.priority, builder: (column) => column);
 
   GeneratedColumn<String> get backgroundColor => $composableBuilder(
     column: $table.backgroundColor,
@@ -4403,6 +4472,7 @@ class $$ButtonsTableTableManager
                 Value<bool> hidden = const Value.absent(),
                 Value<bool> isSystem = const Value.absent(),
                 Value<bool> userEdited = const Value.absent(),
+                Value<int> priority = const Value.absent(),
                 Value<String?> backgroundColor = const Value.absent(),
                 Value<String?> borderColor = const Value.absent(),
                 Value<int?> imageId = const Value.absent(),
@@ -4419,6 +4489,7 @@ class $$ButtonsTableTableManager
                 hidden: hidden,
                 isSystem: isSystem,
                 userEdited: userEdited,
+                priority: priority,
                 backgroundColor: backgroundColor,
                 borderColor: borderColor,
                 imageId: imageId,
@@ -4437,6 +4508,7 @@ class $$ButtonsTableTableManager
                 Value<bool> hidden = const Value.absent(),
                 Value<bool> isSystem = const Value.absent(),
                 Value<bool> userEdited = const Value.absent(),
+                Value<int> priority = const Value.absent(),
                 Value<String?> backgroundColor = const Value.absent(),
                 Value<String?> borderColor = const Value.absent(),
                 Value<int?> imageId = const Value.absent(),
@@ -4453,6 +4525,7 @@ class $$ButtonsTableTableManager
                 hidden: hidden,
                 isSystem: isSystem,
                 userEdited: userEdited,
+                priority: priority,
                 backgroundColor: backgroundColor,
                 borderColor: borderColor,
                 imageId: imageId,
