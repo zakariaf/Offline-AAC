@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E06 — Show mode |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | M |
 | **Depends on** | E02-T02 |
 | **Blocks** | E06-T02 |

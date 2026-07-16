@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Status** | Not started |
+| **Status** | Done |
 | **Tasks** | 3 |
 | **Depends on** | E02 (design system — `showGround`/`showInk`/`showStandingLine` on `AacTheme`, the `show` and `standing` roles, the bundled variable font) |
 
@@ -18,6 +18,12 @@ Getting it wrong has two distinct failure shapes, and they are not the same bug:
 - **Misread.** A phone held up saying "Thank you" in 140pt type reads as *weird*. The two seconds where a stranger decides whether they are talking to a competent adult with a temporary problem, or to a person something is wrong with, is decided by the standing line above the phrase — not by the size of the phrase. **The enemy is being misread, not being unseen.** That is why E06-T03 exists and is not a polish task.
 
 There is no telemetry. Nobody will ever report that the fitter returned 32pt for every line because a `TextPainter` was laid out with a `maxWidth`. Tests are the only instrument.
+
+## Implementation note — 2026-07-16
+
+Built as `lib/ui/show_text/` (`line_fitter.dart`, `show_text_screen.dart`), with the settings slice in `lib/data/settings_repository.dart` (three keys + `ShowPolarity`), `lib/ui/settings/settings_controller.dart` (a live `settingsProvider` the show screen and the controls both read; the full settings screen is E08), `lib/ui/settings/show_settings_section.dart` (the three controls), and `lib/ui/core/instant_route.dart` (a zero-duration `MaterialPageRoute` so the flash is genuinely frame-quiet — `_NoTransitions` alone removes the transition widget but not the 300ms controller). The standing line's height budget is subtracted by layout: it sits above the poster's `Expanded`, so the fitter measures the height that is actually left.
+
+**Goldens: covered by readable assertions, not binary files.** E05-T07 established the project decision to ship no goldens for v1 — macOS-generated PNGs turn a Linux CI run red, and everything a golden here would catch is caught more cheaply with a message a human can read. Applied consistently: "all four palettes render the same light poster" is a parametrised test asserting the background is `showGround` under every palette; "line-present vs line-absent give different type sizes" is the `clearing the line hands its height back` test (a strictly larger fitted size on a height-bound viewport). The `## What "done" means` bullets below that name goldens are satisfied by those tests.
 
 ## What "done" means
 
