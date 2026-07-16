@@ -35,7 +35,7 @@ dependencies:
   # sit in their alphabetical slots (sort_pub_dependencies) rather than grouped.
   #
   # archive: pure-Dart zip read/write, no platform channel, no network.
-  archive: ^3.6.1
+  archive: ^4.0.9
 
   # The iOS audio session category. `.playback`, never `.ambient` — the ambient
   # category lets the hardware silent switch mute the app, which means a user
