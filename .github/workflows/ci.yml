@@ -112,7 +112,7 @@ jobs:
             -o coverage/lcov.info --ignore-errors unused
           lcov --list coverage/lcov.info
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: coverage
@@ -146,7 +146,7 @@ jobs:
         # only field signal this app will ever have (E11-T03, RELEASE.md).
         run: flutter build appbundle --release
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: app-release-unsigned-aab
           path: build/app/outputs/bundle/release/app-release.aab
