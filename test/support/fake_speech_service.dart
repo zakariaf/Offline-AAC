@@ -67,10 +67,16 @@ class FakeSpeechService implements SpeechService {
   FakeSpeechService({
     this.env = SpeechEnv.reportedSuccessButSilent,
     this.warmUpCompletes = true,
+    this.hangSpeak = false,
   });
 
   /// The world this fake presents. Mutable so a single test can change it.
   SpeechEnv env;
+
+  /// When true, [speak] records the call and returns a Future that never
+  /// completes — an engine that accepts an utterance and never reports it done.
+  /// The lit latch's guard timer exists exactly for this; nothing else clears it.
+  final bool hangSpeak;
 
   /// When false, [warmUp] never completes. Lets a test prove the launch path
   /// does not wait on the engine.
@@ -102,6 +108,7 @@ class FakeSpeechService implements SpeechService {
   Future<SpeakOutcome> speak(String text) async {
     calls.add('speak');
     spoken.add(text);
+    if (hangSpeak) return Completer<SpeakOutcome>().future;
     // No `default:`. A new SpeechEnv value is a compile error until this switch
     // decides what the engine does in that world.
     return switch (env) {

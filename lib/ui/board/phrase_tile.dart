@@ -146,22 +146,25 @@ class PhraseTile extends StatelessWidget {
           child: Builder(
             builder: (context) {
               final focused = Focus.of(context).hasFocus;
-              return Listener(
+              return GestureDetector(
                 // The whole rect is the target, always — never the painted
                 // shape. Without this the inset around a short label is dead
                 // space, and a near-miss mid-shutdown is silence.
                 behavior: HitTestBehavior.opaque,
-                onPointerDown: (_) {
-                  // Dispatch order, not completion order: haptic, then the lit
-                  // state, then TTS. Awaiting the haptic would put a
-                  // platform-channel round trip in front of every phrase.
-                  unawaited(HapticFeedback.selectionClick());
-                  // Pointer DOWN. onTap fires on pointer up and delays every
-                  // channel of feedback by the whole press. This fires ahead of
-                  // gesture disambiguation, which is safe only because nothing
-                  // here scrolls — that rule is load-bearing, not aesthetic.
-                  onPressed(row, col);
-                },
+                // The haptic is the one channel that fires on contact, so a tap
+                // is acknowledged in the hand the instant a finger lands. It is
+                // non-committal: on a large-text board this plane scrolls, and a
+                // drag that becomes a scroll gets only this tick, never speech.
+                onTapDown: (_) => unawaited(HapticFeedback.selectionClick()),
+                // Speech and the lit state fire on TAP — pointer up, after this
+                // tile has WON the gesture arena. A vertical drag loses the
+                // arena to the scroll view, so scrolling the board never speaks.
+                // The board is a speech surface that now scrolls when text is
+                // large; committing on down would speak on every scroll attempt,
+                // which is why this cannot be a pointer-down handler. The cost is
+                // that speech lands on release rather than press — a deliberate
+                // AAC tap absorbs that; a scroll silently must not speak.
+                onTap: () => onPressed(row, col),
                 child: Stack(
                   clipBehavior: Clip.none,
                   fit: StackFit.expand,

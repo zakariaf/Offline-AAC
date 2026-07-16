@@ -1,9 +1,12 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:offline_aac/model/board_grid.dart';
 import 'package:offline_aac/ui/board/board_controller.dart';
 import 'package:offline_aac/ui/board/compose_field.dart';
 import 'package:offline_aac/ui/board/phrase_tile.dart';
+import 'package:offline_aac/ui/board/responsive_grid.dart';
 import 'package:offline_aac/ui/core/tokens.dart';
 
 /// The board plane's shape before the board itself has arrived.
@@ -86,13 +89,27 @@ class BoardScreen extends ConsumerWidget {
   }
 }
 
-/// The fixed grid of cells.
+/// The grid of cells.
 ///
-/// Laid out with no scrollable anywhere, and not merely with scrolling
-/// disabled. The tile's pointer-down feedback fires before gesture
-/// disambiguation and is legal only because nothing here can claim the pointer
-/// for a drag. Tile size falls out of the division — `(viewport - chrome) /
-/// rows` — and is never hardcoded, never floored.
+/// The number of COLUMNS is a rendering decision, not a stored one: the board
+/// keeps its authored `rows x cols` shape, and this plane reflows those same
+/// cells — in their canonical reading order, each carrying its own logical
+/// coordinate — into as many columns as the current text size leaves room for.
+/// At the default text size that is the authored column count and the layout is
+/// the fixed grid it has always been. Turn the system text size up and the
+/// columns reduce so a warm multi-word label keeps every word instead of
+/// shrinking or clipping; once the taller tiles no longer fit one screen, the
+/// plane SCROLLS rather than drop a line. See [chooseColumns] / [minTileHeight].
+///
+/// Reflowing at a different text size does not fight the muscle-memory rule that
+/// [BoardGrid] is built on. Text size is a stable OS setting: a given user sees
+/// one layout, launch after launch, and their reach is learned against it. Only
+/// a deliberate change to that setting reflows the board, which is exactly when
+/// a layout is expected to adapt. Screen-reader and switch-scan ORDER never move
+/// at all — that is driven by each tile's priority sort key, not by where it
+/// sits — so the reflow is purely visual.
+///
+/// Tile size still falls out of the division — never hardcoded, never floored.
 class _BoardPlane extends StatelessWidget {
   const _BoardPlane({this.grid});
 
@@ -101,33 +118,163 @@ class _BoardPlane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final board = grid;
-    final rows = board?.rows ?? _kShellRows;
-    final cols = board?.cols ?? _kShellCols;
+    // The loading / error shell: the grid's authored shape filled with empty
+    // cells, so the plane holds its size and never collapses to a spinner while
+    // the board reads. Nothing to measure, so it never scrolls — it is on screen
+    // for a frame and must not resize the plane under it.
+    if (board == null) {
+      return _fixedGrid(
+        rows: _kShellRows,
+        cols: _kShellCols,
+        cellAt: (row, col) => _BoardCell(row: row, col: col, tile: null),
+      );
+    }
 
-    // 14 across, 22 down. The gutters are unequal and that IS the composition:
-    // equal gutters in both axes read as a table, unequal read as a designed
-    // page and group the grid into rows, which is what the eye should find —
-    // a row of tiles shares its last baseline and scans as a line of type.
-    // Tidying these to one constant deletes the design and nothing goes red.
+    // A column count is a function of the space and the user's text size, so it
+    // is decided here, where both are known, and re-decided when either changes
+    // (rotation, keyboard, a settings change) — never per frame.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final height = constraints.maxHeight;
+        final scaler = MediaQuery.textScalerOf(context);
+        final direction = Directionality.of(context);
+        // Measure against the weight the tile will actually paint: the platform
+        // bold-text flag widens advances, and a column count that ignored it
+        // would clip a label the instant bold is on.
+        final labelStyle = AacType.tile.copyWith(
+          fontWeight: MediaQuery.boldTextOf(context)
+              ? FontWeight.w800
+              : null,
+        );
+        final labels = <String>[
+          for (final tile in board.tiles)
+            if (tile != null) tile.label,
+        ];
+
+        final cols = chooseColumns(
+          contentWidth: width,
+          maxCols: board.cols,
+          labels: labels,
+          style: labelStyle,
+          scaler: scaler,
+          direction: direction,
+        );
+
+        final cellCount = board.cellCount;
+        final rowCount = (cellCount + cols - 1) ~/ cols;
+
+        // The tallest a tile must be for no label to lose a line, versus the
+        // height a tile would get if the rows simply divided the viewport. When
+        // the division already gives that much, the grid fills the screen and
+        // does not scroll — the default-text-size case, unchanged. When it does
+        // not, tiles take the height they need and the plane scrolls.
+        final needed = labels.isEmpty
+            ? 0.0
+            : minTileHeight(
+                contentWidth: width,
+                cols: cols,
+                labels: labels,
+                style: labelStyle,
+                scaler: scaler,
+                direction: direction,
+              );
+        final natural = (height - (rowCount - 1) * Geom.gapRow) / rowCount;
+        final scrolls = needed > natural + 0.5;
+
+        // The tile's LOGICAL coordinate travels with it into whatever column it
+        // lands in: taps, the lit state, and the key all resolve by (row, col),
+        // so the reflow moves the widget without moving its identity.
+        Widget cellAt(int visualRow, int visualCol) {
+          final index = visualRow * cols + visualCol;
+          if (index >= cellCount) return const SizedBox.shrink();
+          final logicalRow = index ~/ board.cols;
+          final logicalCol = index % board.cols;
+          return _BoardCell(
+            row: logicalRow,
+            col: logicalCol,
+            tile: board.tiles[index],
+          );
+        }
+
+        return scrolls
+            ? SingleChildScrollView(
+                // Clamping, not bouncing: this is a speech surface, and an
+                // overscroll glow or rubber-band on a board of quick phrases
+                // reads as a toy. It scrolls only as far as there is content.
+                physics: const ClampingScrollPhysics(),
+                child: _scrollingGrid(
+                  rows: rowCount,
+                  cols: cols,
+                  rowHeight: math.max(needed, natural),
+                  cellAt: cellAt,
+                ),
+              )
+            : _fixedGrid(rows: rowCount, cols: cols, cellAt: cellAt);
+      },
+    );
+  }
+
+  /// Rows that divide the viewport by flex — the grid fills the screen exactly,
+  /// with no rounding slack that could overflow a pixel. Used whenever the tiles
+  /// already fit, which is every board at the default text size.
+  Widget _fixedGrid({
+    required int rows,
+    required int cols,
+    required Widget? Function(int row, int col) cellAt,
+  }) {
     return Column(
       children: <Widget>[
         for (var row = 0; row < rows; row++) ...<Widget>[
           if (row > 0) const SizedBox(height: Geom.gapRow),
+          Expanded(child: _gridRow(row: row, cols: cols, cellAt: cellAt)),
+        ],
+      ],
+    );
+  }
+
+  /// Rows of a fixed height, taller than the viewport share, so the enclosing
+  /// scroll view has something to scroll. A scroll view gives its child
+  /// unbounded height, so nothing here can flex-overflow.
+  Widget _scrollingGrid({
+    required int rows,
+    required int cols,
+    required double rowHeight,
+    required Widget? Function(int row, int col) cellAt,
+  }) {
+    return Column(
+      children: <Widget>[
+        for (var row = 0; row < rows; row++) ...<Widget>[
+          if (row > 0) const SizedBox(height: Geom.gapRow),
+          SizedBox(
+            height: rowHeight,
+            child: _gridRow(row: row, cols: cols, cellAt: cellAt),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// One row of `cols` equal cells.
+  ///
+  /// 14 across, 22 down. The gutters are unequal and that IS the composition:
+  /// equal gutters in both axes read as a table, unequal read as a designed page
+  /// and group the grid into rows, which is what the eye should find — a row of
+  /// tiles shares its last baseline and scans as a line of type. Tidying these
+  /// to one constant deletes the design and nothing goes red.
+  Widget _gridRow({
+    required int row,
+    required int cols,
+    required Widget? Function(int row, int col) cellAt,
+  }) {
+    return Row(
+      children: <Widget>[
+        for (var col = 0; col < cols; col++) ...<Widget>[
+          if (col > 0) const SizedBox(width: Geom.gapColumn),
+          // Expanded on a null cell too, so a short last row keeps its column
+          // widths and the tiles above it stay put.
           Expanded(
-            child: Row(
-              children: <Widget>[
-                for (var col = 0; col < cols; col++) ...<Widget>[
-                  if (col > 0) const SizedBox(width: Geom.gapColumn),
-                  Expanded(
-                    child: _BoardCell(
-                      row: row,
-                      col: col,
-                      tile: board?.tileAt(row, col),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+            child: cellAt(row, col) ?? const SizedBox.shrink(),
           ),
         ],
       ],
