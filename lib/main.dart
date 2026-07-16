@@ -12,6 +12,7 @@ import 'package:offline_aac/data/speech/flutter_tts_speech_service.dart';
 import 'package:offline_aac/data/speech/speech_service.dart';
 import 'package:offline_aac/ui/app.dart';
 import 'package:offline_aac/ui/board/board_controller.dart';
+import 'package:offline_aac/ui/settings/settings_controller.dart';
 
 /// The cold-launch sequence.
 ///
@@ -82,6 +83,9 @@ Future<void> main() async {
         // wrong polarity is a sudden luminance change delivered to someone in a
         // shutdown — the exact event the animation ban exists to prevent.
         initialPaletteProvider.overrideWithValue(settings.palette),
+        // The whole settings snapshot, so the show screen reads the user's
+        // polarity and standing line from the first time it is opened.
+        initialSettingsProvider.overrideWithValue(settings),
       ],
       child: const ReedApp(),
     ),

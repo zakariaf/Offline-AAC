@@ -1,10 +1,11 @@
 import 'package:offline_aac/data/database/app_database.dart';
 import 'package:offline_aac/data/speech/speech_service.dart';
 import 'package:offline_aac/model/aac_palette.dart';
+import 'package:offline_aac/ui/strings.dart';
 
-// The seven key strings live here and nowhere else. Kept private to the library
-// so no widget can name a preference by a magic string: everything outside this
-// file speaks in typed getters and setters.
+// The key strings live here and nowhere else. Kept private to the library so no
+// widget can name a preference by a magic string: everything outside this file
+// speaks in typed getters and setters.
 const String _kTheme = 'theme';
 const String _kPitch = 'pitch';
 const String _kRate = 'rate';
@@ -12,10 +13,18 @@ const String _kOutputMode = 'output_mode';
 const String _kGridSize = 'grid_size';
 const String _kHaptics = 'haptics';
 const String _kVoiceId = 'voice_id';
+const String _kStandingEnabled = 'standing_line_enabled';
+const String _kStandingText = 'standing_line_text';
+const String _kShowPolarity = 'show_polarity';
 
 /// The two shipping layouts: the 3-column phone default and the 2-column large
 /// board with roughly 180dp tiles for one-handed use in a shutdown.
 enum GridSize { phone, large }
+
+/// The show screen's polarity. [bright] is the always-light poster a stranger
+/// reads; [matchTheme] hands the user their own palette at poster scale — the
+/// one condition under which show mode is not `#FFFCF7`, and their call to make.
+enum ShowPolarity { bright, matchTheme }
 
 /// A snapshot of every user preference, typed.
 ///
@@ -31,6 +40,9 @@ class ReedSettings {
     required this.gridSize,
     required this.haptics,
     required this.voiceId,
+    required this.showPolarity,
+    required this.standingLineEnabled,
+    required this.standingLineText,
   });
 
   /// The behaviour of a fresh install. Every field here is also the fallback a
@@ -43,7 +55,10 @@ class ReedSettings {
       output = OutputMode.speak,
       gridSize = GridSize.phone,
       haptics = true,
-      voiceId = null;
+      voiceId = null,
+      showPolarity = ShowPolarity.bright,
+      standingLineEnabled = true,
+      standingLineText = defaultStandingLine;
 
   final AacPalette palette;
   final double pitch;
@@ -55,6 +70,44 @@ class ReedSettings {
   /// The stored voice's engine id, or null when none has been chosen. A null
   /// here is normal; the startup path re-resolves it against installed voices.
   final String? voiceId;
+
+  /// The show screen's polarity; [ShowPolarity.bright] by default.
+  final ShowPolarity showPolarity;
+
+  /// Whether the standing line sits above the poster. Default on — this line,
+  /// not the type size, is what keeps the phone from reading as *weird*.
+  final bool standingLineEnabled;
+
+  /// The standing line's text. An empty string is a valid, deliberate choice and
+  /// is preserved as such — it is NOT the same state as "the user never set one",
+  /// which resolves to [defaultStandingLine].
+  final String standingLineText;
+
+  ReedSettings copyWith({
+    AacPalette? palette,
+    double? pitch,
+    double? rate,
+    OutputMode? output,
+    GridSize? gridSize,
+    bool? haptics,
+    String? voiceId,
+    ShowPolarity? showPolarity,
+    bool? standingLineEnabled,
+    String? standingLineText,
+  }) {
+    return ReedSettings(
+      palette: palette ?? this.palette,
+      pitch: pitch ?? this.pitch,
+      rate: rate ?? this.rate,
+      output: output ?? this.output,
+      gridSize: gridSize ?? this.gridSize,
+      haptics: haptics ?? this.haptics,
+      voiceId: voiceId ?? this.voiceId,
+      showPolarity: showPolarity ?? this.showPolarity,
+      standingLineEnabled: standingLineEnabled ?? this.standingLineEnabled,
+      standingLineText: standingLineText ?? this.standingLineText,
+    );
+  }
 }
 
 /// The entire boundary between typed preferences and their stored strings.
@@ -103,6 +156,18 @@ class SettingsRepository {
 
   Future<void> setRate(double value) => _put(_kRate, value.toString());
 
+  Future<void> setShowPolarity(ShowPolarity value) =>
+      _put(_kShowPolarity, value.name);
+
+  Future<void> setStandingLineEnabled({required bool enabled}) =>
+      _put(_kStandingEnabled, enabled.toString());
+
+  /// The standing line is a user string: stored EXACTLY as given. No trim, no
+  /// capitalisation, no appended period, no re-fill of an empty value with the
+  /// default — an empty line is a choice the editor must honour, not correct.
+  Future<void> setStandingLineText(String value) =>
+      _put(_kStandingText, value);
+
   /// Upsert on the primary key. Never read-then-write (a lost update under a
   /// concurrent write) and never a bare insert that throws on the second call.
   Future<void> _put(String key, String value) {
@@ -127,6 +192,19 @@ class SettingsRepository {
       // A voice id is an opaque engine string; there is nothing to validate here
       // beyond presence. An empty string is treated as absent.
       voiceId: (raw[_kVoiceId]?.isNotEmpty ?? false) ? raw[_kVoiceId] : null,
+      showPolarity: _enumByName(
+        ShowPolarity.values,
+        raw[_kShowPolarity],
+        d.showPolarity,
+      ),
+      standingLineEnabled: _bool(raw[_kStandingEnabled], d.standingLineEnabled),
+      // ABSENT and EMPTY are two different states and must not collapse. A
+      // missing row means the user never chose, so the default sentence stands;
+      // a present row holding '' means they deliberately cleared it, and `??`
+      // over the empty string would silently overwrite that choice.
+      standingLineText: raw.containsKey(_kStandingText)
+          ? raw[_kStandingText]!
+          : d.standingLineText,
     );
   }
 

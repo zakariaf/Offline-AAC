@@ -4,6 +4,7 @@ import 'package:offline_aac/data/database/app_database.dart';
 import 'package:offline_aac/data/settings_repository.dart';
 import 'package:offline_aac/data/speech/speech_service.dart';
 import 'package:offline_aac/model/aac_palette.dart';
+import 'package:offline_aac/ui/strings.dart';
 
 /// Settings is the one place a byte on disk becomes app behaviour, and disk is
 /// where corruption, truncation, and a previous version's format all live. Every
@@ -112,5 +113,68 @@ void main() {
       AacPalette.paper,
       reason: 'the theme switcher writes here and the app must follow',
     );
+  });
+
+  group('the standing line, and absent-vs-empty', () {
+    test('a missing row resolves to the default sentence', () async {
+      expect((await settings.load()).standingLineText, defaultStandingLine);
+    });
+
+    test('a present empty row is honoured as empty, not re-defaulted', () async {
+      // The one that a `?? defaultStandingLine` on the parsed value gets wrong:
+      // clearing the line is a deliberate choice, and the app must not silently
+      // put the sentence back.
+      await settings.setStandingLineText('');
+      expect(
+        (await settings.load()).standingLineText,
+        isEmpty,
+        reason: 'absent means "never chose"; empty means "chose nothing"',
+      );
+    });
+
+    test('the text is stored verbatim — no trim, no transform', () async {
+      const messy = '  Give me A Minute…  ';
+      await settings.setStandingLineText(messy);
+      expect((await settings.load()).standingLineText, messy);
+    });
+
+    test('enabled defaults on, and a garbage value falls back to on', () async {
+      expect((await settings.load()).standingLineEnabled, isTrue);
+      await db.into(db.settings).insertOnConflictUpdate(
+        SettingsCompanion.insert(key: 'standing_line_enabled', value: 'nope'),
+      );
+      expect((await settings.load()).standingLineEnabled, isTrue);
+    });
+
+    test('disabling writes the literal false and reads back false', () async {
+      await settings.setStandingLineEnabled(enabled: false);
+      expect((await settings.load()).standingLineEnabled, isFalse);
+    });
+  });
+
+  group('the show polarity', () {
+    test('defaults to bright', () async {
+      expect((await settings.load()).showPolarity, ShowPolarity.bright);
+    });
+
+    for (final garbage in <String>['', '2', 'Bright ', 'matchtheme']) {
+      test('garbage "$garbage" falls back to bright and never throws', () async {
+        await db.into(db.settings).insertOnConflictUpdate(
+          SettingsCompanion.insert(key: 'show_polarity', value: garbage),
+        );
+        expect((await settings.load()).showPolarity, ShowPolarity.bright);
+      });
+    }
+
+    test('setShowPolarity writes the literal name "matchTheme"', () async {
+      await settings.setShowPolarity(ShowPolarity.matchTheme);
+      final row = await (db.select(
+        db.settings,
+      )..where((s) => s.key.equals('show_polarity'))).getSingle();
+      // Assert the raw column, not the round trip: a stored index would pass a
+      // round trip and repoint on the next enum reorder.
+      expect(row.value, 'matchTheme');
+      expect((await settings.load()).showPolarity, ShowPolarity.matchTheme);
+    });
   });
 }
