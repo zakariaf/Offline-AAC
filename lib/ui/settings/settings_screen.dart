@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:offline_aac/ui/core/instant_route.dart';
 import 'package:offline_aac/ui/core/tokens.dart';
+import 'package:offline_aac/ui/settings/privacy_policy_screen.dart';
 import 'package:offline_aac/ui/settings/settings_controls.dart';
 import 'package:offline_aac/ui/settings/show_settings_section.dart';
 import 'package:offline_aac/ui/settings/voice_picker.dart';
@@ -26,9 +27,9 @@ class SettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: t.ground,
-      body: const SafeArea(
+      body: SafeArea(
         child: Padding(
-          padding: EdgeInsetsDirectional.all(Geom.margin),
+          padding: const EdgeInsetsDirectional.all(Geom.margin),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -36,26 +37,33 @@ class SettingsScreen extends ConsumerWidget {
                 // The way back. On iOS the hard-cut route offers no swipe-back
                 // edge, so this is the only exit; on Android it beats hunting for
                 // the system gesture. First in reading and traversal order.
-                SettingsBackButton(),
+                const SettingsBackButton(),
                 // Haptics and low stimulus first — the two a person reaches for
                 // while in the state that made them open settings.
-                HapticsControl(),
-                LowStimulusControl(),
+                const HapticsControl(),
+                const LowStimulusControl(),
                 // The voice — a voice is the sound of a person, so it is a
                 // first-class section, above theme and tile count, not a submenu.
-                VoicePicker(),
-                OutputModeControl(),
-                ThemeControl(),
-                HcPolarityControl(),
-                TileCountControl(),
-                ShowSettingsSection(),
-                KeepOffBackupControl(),
+                const VoicePicker(),
+                const OutputModeControl(),
+                const ThemeControl(),
+                const HcPolarityControl(),
+                const TileCountControl(),
+                const ShowSettingsSection(),
+                const KeepOffBackupControl(),
                 // Export/import — the whole durability story once cloud backup
                 // is off. The result line sits directly beneath the two rows.
-                ExportBoardControl(),
-                ImportBoardControl(),
-                PortabilityResult(),
-                RestoreBoardControl(),
+                const ExportBoardControl(),
+                const ImportBoardControl(),
+                const PortabilityResult(),
+                const RestoreBoardControl(),
+                // The privacy policy, last — a labelled link opened offline as a
+                // hard-cut route. Navigation is wired here so the control need
+                // not import the screen (the SettingsButton pattern).
+                PrivacyPolicyControl(
+                  onOpen: () =>
+                      Navigator.of(context).push(PrivacyPolicyScreen.route()),
+                ),
               ],
             ),
           ),

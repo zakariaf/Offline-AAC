@@ -488,3 +488,22 @@ class SettingsButton extends StatelessWidget {
     );
   }
 }
+
+/// The `privacy policy` row. Apple 5.1.1(i) requires the policy inside the app;
+/// this opens it, offline. Like [SettingsButton], the navigation is passed in via
+/// [onOpen] so this control need not import the screen — no chrome-to-screen
+/// import knot and no cycle with the screen that reuses [SettingsBackButton].
+class PrivacyPolicyControl extends StatelessWidget {
+  const PrivacyPolicyControl({required this.onOpen, super.key});
+
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    return SettingsRow(
+      semanticLabel: privacyPolicyLabel,
+      onTap: onOpen,
+      child: const _TextFace(privacyPolicyChrome),
+    );
+  }
+}

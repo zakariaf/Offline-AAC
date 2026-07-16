@@ -149,3 +149,12 @@ const String openWhatItSaysChrome = 'set what it says';
 const String editSaveFailed =
     'That tile didn’t save. Tap it to edit and save '
     'again.';
+
+/// The privacy-policy link in settings — lowercase chrome, like the rest.
+/// Apple 5.1.1(i) requires the policy to live inside the app, not only in store
+/// metadata; this opens it, offline.
+const String privacyPolicyChrome = 'privacy policy';
+
+/// Its accessibility label. A screen reader speaks a sentence, so sentence case,
+/// and it says what the button does.
+const String privacyPolicyLabel = 'Privacy policy. Opens the policy.';

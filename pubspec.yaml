@@ -106,3 +106,7 @@ flutter:
 
   assets:
     - assets/fonts/OFL.txt
+    # The privacy policy is bundled so the in-app viewer shows the exact same
+    # text as the hosted page (Apple 5.1.1(i) needs the link inside the app),
+    # loaded offline. One source of truth; no drift.
+    - legal/privacy-policy.md
