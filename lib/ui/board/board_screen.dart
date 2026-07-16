@@ -70,9 +70,12 @@ class BoardScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
+              // The compose field doubles as the fallback surface: when speech
+              // fails, it fills with the words that did not leave the speaker,
+              // so a tap always yields speech OR visible text, never neither.
               const ComposeField(),
               // The seam. This gap is a grid row gap, so the field reads as the
-              // thirteenth cell rather than as a header sitting above a grid.
+              // thirteenth cell rather than a header sitting above a grid.
               const SizedBox(height: Geom.gapRow),
               Expanded(child: plane),
             ],

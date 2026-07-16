@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Status** | Not started |
+| **Status** | Done — all 6 tasks |
 | **Tasks** | 6 |
 | **Depends on** | E01 (E04-T01 gates on E01-T01's tree and analyzer config) |
 

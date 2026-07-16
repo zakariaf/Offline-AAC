@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E04 — Speech |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | M |
 | **Depends on** | E04-T01 |
 | **Blocks** | E04-T03, E08-T02 |
@@ -151,3 +151,10 @@ Each trap gets its own named test, plus: `notInstalled` is not offline-safe even
 ## Done when
 
 `offlineSafeVoices` has 100% line coverage, every returned voice provably needs no network and is fully installed under a generated mixed input, and a voice that vanished between launches surfaces as words on screen rather than as nothing.
+
+
+---
+
+## What actually happened
+
+voice_filter tests exhaust the traps: null/non-List → empty, network "1" string dropped, notInstalled dropped, iOS no-key → offline-safe, TAB (not comma/space) feature split, malformed maps → null, and a 50-voice property test asserting the safety invariant. test/speech/voice_filter_test.dart.

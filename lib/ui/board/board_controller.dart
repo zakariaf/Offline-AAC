@@ -7,6 +7,7 @@ import 'package:offline_aac/data/crash_log.dart';
 import 'package:offline_aac/data/speech/speech_service.dart';
 import 'package:offline_aac/model/board_grid.dart';
 import 'package:offline_aac/model/speak_outcome.dart';
+import 'package:offline_aac/speech/speech_controller.dart';
 
 /// The engine. Overridden on the root `ProviderScope` in `main()`, the same way
 /// [databaseProvider] is, and overridden with a fake in tests.
@@ -109,12 +110,35 @@ class BoardController extends Notifier<BoardUiState> {
   String? _fallback;
   bool _disposed = false;
 
+  /// The speak path lives here, not in this class. This controller only owns the
+  /// lit latch — the visible confirmation that a tap landed — and delegates the
+  /// actual barge-in-speak-or-show-the-words to a widget-free [SpeechController]
+  /// that is unit-tested against every way the engine can fail.
+  late final SpeechController _speech;
+
   @override
   BoardUiState build() {
+    _speech = SpeechController(
+      speech: ref.read(speechServiceProvider),
+      log: ref.read(crashLogProvider),
+      // The words that did not leave the speaker go on screen. This is the
+      // whole point of the sealed outcome carrying its text.
+      showText: (words) {
+        _fallback = words;
+      },
+      // The utterance resolved — spoke or failed. Half of the latch clear; the
+      // other half is the minimum hold, so a fast tap is never imperceptible.
+      onSettled: () {
+        if (_disposed) return;
+        _outcomeArrived = true;
+        _clearIfDone(_utterance);
+      },
+    );
     ref.onDispose(() {
       // Riverpod 2.x has no `ref.mounted`; this flag is the guard for every
       // write that crosses an await.
       _disposed = true;
+      _speech.dispose();
       _holdTimer?.cancel();
       _guardTimer?.cancel();
     });
@@ -180,59 +204,20 @@ class BoardController extends Notifier<BoardUiState> {
       _clearIfDone(token);
     });
     _guardTimer = Timer(latchGuard, () {
+      // An engine that accepts and never reports completion sails past the
+      // seam's own 8s call timeout; this force-clears the tile so it stops
+      // lying about what it is doing.
       _log('lit latch force-cleared after ${latchGuard.inSeconds}s');
       _holdElapsed = true;
       _outcomeArrived = true;
       _clearIfDone(token);
     });
 
-    // unawaited is the greppable, intentional discard — and it is only honest
-    // because of the catchError below it. Without one, the error goes to
-    // PlatformDispatcher.onError, detached from the UI, and the user gets
-    // nothing.
-    unawaited(
-      _speakAndSurface(token, text).catchError((Object e, StackTrace s) {
-        // _speakAndSurface should not throw: speak() returns outcomes rather
-        // than throwing for anything expected. If we land here, the log or the
-        // engine seam itself threw. Show the words anyway; that is the product.
-        _log('speak path threw: $e', s);
-        _fallback = text;
-        _outcomeArrived = true;
-        _clearIfDone(token);
-      }),
-    );
-  }
-
-  Future<void> _speakAndSurface(int token, String text) async {
-    final speech = ref.read(speechServiceProvider);
-
-    // Barge-in, before every speak, unconditionally. This is what makes
-    // "tap a different tile" mean "switch" rather than "queue".
-    await speech.stop();
-    final outcome = await speech.speak(text);
-
-    // A newer press, a stop, or a teardown happened while the engine was busy.
-    // This outcome is about an utterance nobody is waiting for any more.
-    if (_disposed || token != _utterance) return;
-
-    switch (outcome) {
-      case SpokeAloud():
-        break;
-      // Matching the intermediate sealed type IS exhaustive, and a new
-      // SpeakFailure variant will not break it — which is correct: every
-      // failure resolves the same way. The user sees the words. There is no
-      // `default:` here and there must never be one; it would disable the only
-      // compiler-grade net available.
-      case SpeakFailure(:final spokenText, :final logLine):
-        // logLine only. The log is user-exportable and must never carry their
-        // phrases: a user mailing it to a stranger must not mail their voice
-        // with it.
-        _log('speak failed: $logLine', StackTrace.current);
-        _fallback = spokenText;
-    }
-
-    _outcomeArrived = true;
-    _clearIfDone(token);
+    // The speak path is the controller's job: barge-in, speak, and on any
+    // failure put the words on screen and log the reason. It calls back
+    // `showText`/`onSettled`, wired in `build`. No Future is returned here to
+    // drop, which is the whole design.
+    _speech.speakNow(text);
   }
 
   void _stop() {
@@ -242,19 +227,7 @@ class BoardController extends Notifier<BoardUiState> {
     _holdTimer?.cancel();
     _guardTimer?.cancel();
     state = const BoardUiState();
-
-    unawaited(
-      ref.read(speechServiceProvider).stop().catchError((
-        Object e,
-        StackTrace s,
-      ) {
-        // The tile is already dark and the engine is the only thing that can
-        // still be talking. Nothing here is actionable by the user, but a stop
-        // that fails silently is how a phrase keeps playing after they asked it
-        // not to — so it lands in the log.
-        _log('stop failed: $e', s);
-      }),
-    );
+    _speech.stopNow();
   }
 
   /// Clears the latch once BOTH the minimum hold has elapsed and the utterance

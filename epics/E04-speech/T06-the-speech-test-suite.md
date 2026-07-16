@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E04 — Speech |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | M |
 | **Depends on** | E04-T05 |
 | **Blocks** | Nothing |
@@ -210,3 +210,10 @@ Explicitly does **not** touch `test/native/tts_channel_contract_test.dart`.
 ## Done when
 
 `flutter test` is green in under 30 seconds, `lib/speech/voice_filter.dart` is at 100% with untested files counted, and every environment the app can detect provably yields speech or visible text on a tile tap — with the environments it cannot detect named in a comment rather than faked green.
+
+
+---
+
+## What actually happened
+
+SpeechEnv (10 values; detectable excludes exactly reportedSuccessButSilent) drives a plain implements-SpeechService fake with a no-default speak switch. silence_is_impossible_test parameterizes over detectable and asserts, end-to-end through the real board, that every tap yields speech OR visible text — never neither. Plus barge-in ordering (stop,speak,stop,speak) and the label-vs-sentence test. pumpApp/Device.small harness in test/support/.

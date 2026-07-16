@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E04 — Speech |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | S |
 | **Depends on** | E04-T03 |
 | **Blocks** | E04-T06, E05-T04 |
@@ -118,3 +118,10 @@ Also in scope:
 ## Done when
 
 A tile can be wired with `onTap: () => controller.speakNow(phrase)`, every `SpeakFailure` variant puts the words on screen instead of producing silence, and no callback in the codebase holds a Future.
+
+
+---
+
+## What actually happened
+
+Extracted the speak path into a widget-free lib/speech/speech_controller.dart: void speakNow, no widget context, exhaustive outcome switch with no default, unawaited+catchError, barge-in before every speak. board_controller now delegates to it, keeping only the lit latch. A throwing showText is caught and logged, never escapes; no phrase reaches the log. test/speech/speech_controller_test.dart.

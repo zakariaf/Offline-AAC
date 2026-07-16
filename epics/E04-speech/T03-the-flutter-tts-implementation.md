@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E04 — Speech |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | M |
 | **Depends on** | E04-T02 |
 | **Blocks** | E01-T06, E04-T04, E04-T05 |
@@ -120,3 +120,10 @@ The `!= _ttsSuccess` check reads as paranoia to every reviewer. It is the docume
 ## Done when
 
 `FlutterTtsSpeechService` implements `SpeechService` with every one of the four plugin return paths checked by hand, no `assert` on any of them, the `notInstalled` guard sitting ahead of the `setVoice` check, and the release build green.
+
+
+---
+
+## What actually happened
+
+Impl verified by grep: notInstalled guard sits BEFORE setVoice, exactly four _tts methods (speak/stop/getVoices/setVoice), no assert, no cast, only on-clause catches. Its behaviour is covered end-to-end through the fake at the controller and widget level; the concrete plugin wrapper itself is device-checklist territory.

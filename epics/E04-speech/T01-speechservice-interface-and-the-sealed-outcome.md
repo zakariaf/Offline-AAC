@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E04 — Speech |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | S |
 | **Depends on** | E01-T01 |
 | **Blocks** | E04-T02 |
@@ -197,3 +197,10 @@ Changes:
 ## Done when
 
 The five failure variants exist in one sealed file, `dart analyze` and `flutter test` are green, the build compiles, and a switch over `SpeakOutcome` with no `default:` can produce the on-screen fallback text for every possible failure.
+
+
+---
+
+## What actually happened
+
+Interface + sealed SpeakOutcome verified: all five failure variants expose spokenText, none leaks the phrase into its logLine, and a no-default switch (fallbackFor) resolves every failure. VoiceNotInstalled is its own variant. No `default:`/`case _:` in lib/data/speech. Tests in test/speech/speak_outcome_test.dart.

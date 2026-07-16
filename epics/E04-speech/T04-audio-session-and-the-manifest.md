@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E04 — Speech |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | S |
 | **Depends on** | E04-T03 |
 | **Blocks** | E10-T03 |
@@ -166,3 +166,10 @@ Neither of these is provable in Dart. Add to the **Audio** section of `CHECKLIST
 ## Done when
 
 `.playback` + `duckOthers` + `setSharedInstance` are pinned in one file, `TTS_SERVICE` is inside `<queries>`, `flutter test test/policy` fails if either is edited away, and the ringer-off device check is on the Audio section of the checklist.
+
+
+---
+
+## What actually happened
+
+Audio session (.playback + duckOthers + setSharedInstance, never .ambient) and the TTS_SERVICE manifest queries were landed in E01-T05 and are guarded by policy tests, re-verified here with negative controls. Added docs/CHECKLIST.md with the four Audio device checks.
