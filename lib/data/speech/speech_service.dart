@@ -106,10 +106,24 @@ const double kMinPitch = 0.5;
 const double kMaxPitch = 2;
 const double kDefaultPitch = 1;
 
-/// The speech-rate range. `1.0` is the engine's default speed.
+/// The speech-rate range, as a plain multiplier: `1.0` is normal speed, `2.0`
+/// double, `0.25` a quarter. This is the human-facing model the slider speaks in;
+/// [ttsSpeechRate] converts it to what the engine expects.
 const double kMinRate = 0.25;
 const double kMaxRate = 2;
 const double kDefaultRate = 1;
+
+/// Convert Reed's rate multiplier to the value `flutter_tts` expects.
+///
+/// `flutter_tts` normalises speech rate so that **0.5 is normal on every
+/// platform**: its Android code multiplies the value by 2 before handing it to
+/// `TextToSpeech.setSpeechRate` (whose own 1.0 is normal), and its iOS side maps
+/// 0.5 to `AVSpeechUtteranceDefaultSpeechRate`. Reed's [kDefaultRate] of 1.0 is a
+/// multiplier where 1.0 is normal, so it must be HALVED on the way to the engine
+/// or every utterance plays at double speed — the reason a voice preview at the
+/// default rate was too fast to follow. Reed 1.0 -> engine 0.5 -> normal;
+/// Reed 2.0 -> engine 1.0 -> double; Reed 0.25 -> engine 0.125 -> quarter.
+double ttsSpeechRate(double reedRate) => reedRate / 2;
 
 /// What a tile tap produces.
 ///

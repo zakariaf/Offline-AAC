@@ -290,12 +290,21 @@ class BoardController extends Notifier<BoardUiState> {
   void moveTileDown(int row, int col) =>
       _runEdit((repo, boardId) => repo.moveDown(boardId, row, col));
 
-  /// Hide / unhide a button. Hide is the undo for removal; nothing is deleted.
+  /// Hide / unhide a button. Hide is the reversible removal — the button and its
+  /// slot survive, so Unhide is a one-tap restore.
   void hideTile(int buttonId) =>
       _runEdit((repo, _) => repo.setHidden(buttonId, hidden: true));
 
   void unhideTile(int buttonId) =>
       _runEdit((repo, _) => repo.setHidden(buttonId, hidden: false));
+
+  /// Remove a tile: delete the button so its slot goes EMPTY and can hold a new
+  /// phrase. This is how a full board makes room to add — the empty slot renders
+  /// its `+` in edit mode. It is the one destructive edit (hide is the reversible
+  /// one); the system repair phrase refuses deletion in the repository and is
+  /// never offered the control.
+  void removeTile(int buttonId) =>
+      _runEdit((repo, _) => repo.deleteTile(buttonId));
 
   void _runEdit(
     Future<void> Function(BoardRepository repo, int boardId) op,

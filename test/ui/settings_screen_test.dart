@@ -66,6 +66,19 @@ void main() {
     expect(tester.binding.hasScheduledFrame, isFalse);
   });
 
+  testWidgets('the back button returns to the board', (tester) async {
+    // The route is a hard cut with no transition, so iOS shows no swipe-back
+    // edge; this labelled control is the only way out. It must pop.
+    await openSettings(tester);
+    expect(find.bySemanticsLabel(settingsBackLabel), findsOneWidget);
+    await tester.tap(find.bySemanticsLabel(settingsBackLabel));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(SettingsScreen), findsNothing);
+    // The board is underneath again — its Settings entry is reachable once more.
+    expect(find.bySemanticsLabel('Settings'), findsOneWidget);
+  });
+
   testWidgets('no dialog is ever pushed from settings', (tester) async {
     await openSettings(tester);
     // Tap the restore and backup rows — no confirm modal appears.

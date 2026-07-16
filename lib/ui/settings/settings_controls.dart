@@ -417,6 +417,54 @@ class ThemeChrome extends ConsumerWidget {
   }
 }
 
+/// The settings screen's back control, at the top-left where a back affordance
+/// is expected. The route is a hard cut with no transition, so iOS offers no
+/// swipe-back edge — without this the settings screen is a trap on iOS. A plain
+/// gesture target, never an InkWell: no splash, no 200ms fade, nothing animates.
+class SettingsBackButton extends StatelessWidget {
+  const SettingsBackButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AacTheme.of(context);
+    final bold = MediaQuery.boldTextOf(context);
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: Semantics(
+        container: true,
+        button: true,
+        label: settingsBackLabel,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          // Pops the settings route back to the board. A back button owns its
+          // own navigation — there is no chrome-to-screen import knot to avoid,
+          // unlike the forward SettingsButton.
+          onTap: () => Navigator.of(context).pop(),
+          child: ExcludeSemantics(
+            child: Padding(
+              padding: const EdgeInsetsDirectional.symmetric(vertical: 14),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Icon(Icons.arrow_back_rounded, size: 22, color: t.ink),
+                  const SizedBox(width: 8),
+                  Text(
+                    settingsBackChrome,
+                    style: AacType.field.copyWith(
+                      color: t.ink,
+                      fontWeight: bold ? FontWeight.w800 : null,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// The board-chrome settings entry. One tap to the flat settings list.
 class SettingsButton extends StatelessWidget {
   const SettingsButton({required this.onOpen, super.key});

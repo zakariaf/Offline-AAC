@@ -15,7 +15,7 @@ void main() {
       .firstWhere((t) => t != null && t.row == row && t.col == col)!
       .label;
 
-  testWidgets('a mid-board tile exposes Move up, Move down, and Hide', (
+  testWidgets('a mid-board tile exposes Move up, Move down, Hide, and Remove', (
     tester,
   ) async {
     tester.useDevice(Device.small);
@@ -25,6 +25,8 @@ void main() {
     expect(find.bySemanticsLabel('Move $label up'), findsOneWidget);
     expect(find.bySemanticsLabel('Move $label down'), findsOneWidget);
     expect(find.bySemanticsLabel('Hide $label'), findsOneWidget);
+    // Remove frees the slot so a full board can take a new phrase.
+    expect(find.bySemanticsLabel('Remove $label'), findsOneWidget);
   });
 
   testWidgets('the labels use the DISPLAY label, not the sentence', (
@@ -82,6 +84,9 @@ void main() {
     await tester.pumpApp(grid: _gridWith(systemTile), editing: true);
 
     expect(find.bySemanticsLabel('Hide ${systemTile.label}'), findsNothing);
+    // Nor Remove — the repair phrase is undeletable, so it is never offered the
+    // one destructive control.
+    expect(find.bySemanticsLabel('Remove ${systemTile.label}'), findsNothing);
     // But it can still be moved and edited — is_system only blocks hiding.
     expect(find.bySemanticsLabel('Edit ${systemTile.label}'), findsOneWidget);
   });

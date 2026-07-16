@@ -44,6 +44,14 @@ const String addPhraseLabel = 'Add phrase';
 /// The board's settings entry, and the screen's own title.
 const String settingsChrome = 'settings';
 
+/// The settings screen's back control. Reed pushes settings with a hard-cut
+/// route that has no transition, which also means iOS shows no swipe-back edge —
+/// so this labelled control is the ONLY way back on iOS, and a visible one is
+/// clearer than a system gesture on Android too. Lowercase chrome; the semantic
+/// label names the destination.
+const String settingsBackChrome = 'back';
+const String settingsBackLabel = 'Back to the board';
+
 /// The theme control's visible names, one per cycle position. Both HC palettes
 /// read `high contrast`: polarity is not in the label, which names the position.
 const String themePaperChrome = 'paper';

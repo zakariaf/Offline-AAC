@@ -65,6 +65,7 @@ class PhraseTile extends StatelessWidget {
     this.onMoveDown,
     this.onHide,
     this.onUnhide,
+    this.onRemove,
     this.hapticsEnabled = _alwaysOn,
     super.key,
   });
@@ -115,6 +116,11 @@ class PhraseTile extends StatelessWidget {
   final void Function(int row, int col)? onMoveDown;
   final void Function(int buttonId)? onHide;
   final void Function(int buttonId)? onUnhide;
+
+  /// Remove the tile — deletes the button so the slot goes empty and can hold a
+  /// new phrase. Destructive and permanent (hide is the reversible one), so it
+  /// is never offered for the system repair phrase. Null means not rendered.
+  final void Function(int buttonId)? onRemove;
 
   /// Whether the press haptic fires, READ at press time (not captured at build)
   /// so toggling haptics off takes effect on the very next tap. A function, not a
@@ -169,6 +175,7 @@ class PhraseTile extends StatelessWidget {
         onMoveDown: onMoveDown,
         onHide: onHide,
         onUnhide: onUnhide,
+        onRemove: onRemove,
       );
     }
 
@@ -527,6 +534,7 @@ class _EditTile extends StatelessWidget {
     required this.onMoveDown,
     required this.onHide,
     required this.onUnhide,
+    required this.onRemove,
   });
 
   final int row;
@@ -538,6 +546,7 @@ class _EditTile extends StatelessWidget {
   final void Function(int row, int col)? onMoveDown;
   final void Function(int buttonId)? onHide;
   final void Function(int buttonId)? onUnhide;
+  final void Function(int buttonId)? onRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -608,6 +617,17 @@ class _EditTile extends StatelessWidget {
                 onTap: () => onHide!(tile.buttonId),
               ),
           ],
+          // Remove: delete the button so this slot goes empty and can hold a new
+          // phrase — the way a full board makes room to add. Bottom-end, apart
+          // from the move controls, because it is the one destructive edit. Never
+          // for the system repair phrase (the repository refuses it in any case).
+          if (!tile.isSystem && onRemove != null)
+            _EditControl(
+              alignment: AlignmentDirectional.bottomEnd,
+              icon: Icons.delete_outline_rounded,
+              label: 'Remove ${tile.label}',
+              onTap: () => onRemove!(tile.buttonId),
+            ),
         ],
       ),
     );

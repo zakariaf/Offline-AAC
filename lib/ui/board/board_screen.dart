@@ -390,6 +390,10 @@ class _BoardCell extends ConsumerWidget {
           ref.read(boardControllerProvider.notifier).hideTile(buttonId),
       onUnhide: (buttonId) =>
           ref.read(boardControllerProvider.notifier).unhideTile(buttonId),
+      // Remove frees the slot (deletes the button) so a full board can take a new
+      // phrase. Button id, never captured content, resolved at tap time.
+      onRemove: (buttonId) =>
+          ref.read(boardControllerProvider.notifier).removeTile(buttonId),
       // ref.read INSIDE the callback, and coordinates rather than content. The
       // watched value from build() would be the phrase as it was at the last
       // rebuild: a fast re-tap after an edit would speak the previous sentence.

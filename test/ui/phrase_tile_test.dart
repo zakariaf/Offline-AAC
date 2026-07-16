@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:offline_aac/model/board_grid.dart';
 import 'package:offline_aac/ui/app.dart';
 import 'package:offline_aac/ui/board/phrase_tile.dart';
 import 'package:offline_aac/ui/core/tokens.dart';
@@ -127,6 +128,74 @@ void main() {
       equals((tile.row, tile.col)),
       reason: 'the coordinate is passed, never a captured phrase',
     );
+  });
+
+  group('the edit-mode remove control', () {
+    Tile systemTile() => const Tile(
+      buttonId: 99,
+      row: 0,
+      col: 0,
+      label: 'Repair',
+      vocalization: 'I need a moment',
+      displayText: 'I need a moment',
+      hidden: false,
+      isSystem: true,
+      priority: 1,
+    );
+
+    testWidgets('a non-system tile offers Remove and passes its button id', (
+      tester,
+    ) async {
+      int? removed;
+      await tester.pumpWidget(
+        host(
+          PhraseTile(
+            row: tile.row,
+            col: tile.col,
+            tile: tile,
+            lit: false,
+            editing: true,
+            onPressed: (_, _) {},
+            onEdit: (_, _) {},
+            onRemove: (id) => removed = id,
+          ),
+        ),
+      );
+      final remove = find.bySemanticsLabel('Remove ${tile.label}');
+      expect(remove, findsOneWidget, reason: 'a full board frees a slot here');
+      await tester.tap(remove);
+      expect(
+        removed,
+        tile.buttonId,
+        reason: 'the button id is passed, never captured content',
+      );
+    });
+
+    testWidgets('the system repair phrase is never offered Remove', (
+      tester,
+    ) async {
+      final system = systemTile();
+      await tester.pumpWidget(
+        host(
+          PhraseTile(
+            row: system.row,
+            col: system.col,
+            tile: system,
+            lit: false,
+            editing: true,
+            onPressed: (_, _) {},
+            onEdit: (_, _) {},
+            onRemove: (_) {},
+          ),
+        ),
+      );
+      expect(
+        find.bySemanticsLabel('Remove ${system.label}'),
+        findsNothing,
+        reason: 'the repair phrase is undeletable — no control at all, not a '
+            'disabled one',
+      );
+    });
   });
 
   group('the empty slot', () {

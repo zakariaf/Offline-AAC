@@ -101,7 +101,10 @@ final class FlutterTtsSpeechService implements SpeechService {
       return VoiceUnavailable(text, voiceName: voice.name);
     }
     await _tts.setPitch(pitch);
-    await _tts.setSpeechRate(rate);
+    // Mapped, not raw: flutter_tts treats 0.5 as normal speed (it doubles the
+    // value on Android), so Reed's 1.0-is-normal multiplier must be converted or
+    // the preview plays at double speed.
+    await _tts.setSpeechRate(ttsSpeechRate(rate));
 
     final Object? spoke;
     try {

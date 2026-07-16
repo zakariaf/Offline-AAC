@@ -33,6 +33,10 @@ class SettingsScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
+                // The way back. On iOS the hard-cut route offers no swipe-back
+                // edge, so this is the only exit; on Android it beats hunting for
+                // the system gesture. First in reading and traversal order.
+                SettingsBackButton(),
                 // Haptics and low stimulus first — the two a person reaches for
                 // while in the state that made them open settings.
                 HapticsControl(),
