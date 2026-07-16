@@ -4,9 +4,15 @@
 
 | | |
 |---|---|
-| **Status** | Not started |
+| **Status** | Done |
 | **Tasks** | 4 |
 | **Depends on** | E05 (the grid and the tile widget it edits), E03 (the schema the edits land in) |
+
+## Implementation note — 2026-07-16
+
+Built onto the real project structure, not the aspirational paths in the task files: edit mode is `editing` + `editingSlot` on `BoardUiState` with `toggleEditing`/`onEditPressed`/`closeEditor`/`moveTileUp`/`moveTileDown`/`hideTile`/`unhideTile` on `BoardController`; the toggle is `lib/ui/board/edit_mode_button.dart`; the mode-dependent empty slot, the edit-mode `_EditTile` (face-edits-on-tap plus labelled Move/Hide/Unhide controls), and the `_EmptySlotFace` live in `lib/ui/board/phrase_tile.dart`; the two-field editor is `lib/ui/edit/tile_editor.dart`, shown state-driven in place of the board (no route, no modal); repository work (`editTileText` with curly-on-save + `user_edited`, `setHidden` with the `is_system` guard, `moveUp`/`moveDown` as a `button_id` swap in one transaction) is `lib/data/board_repository.dart`. The `+` on an empty slot fills it (opens the same editor, which `placeTile`s on save) — the EPIC's "filling an empty one is T01's +", rather than a dead button. Edit-mode strings are in `lib/ui/strings.dart`.
+
+`gridProvider` reads with `includeHidden: true` so edit mode can show and un-hide a hidden tile; `PhraseTile` renders a hidden tile as an empty cell in speak mode and a visible, unhide-able tile in edit mode. The manual Switch Access / TalkBack / Accessibility Scanner passes over edit mode are in `docs/CHECKLIST.md`; consistent with `reed-a11y-testing`, the suite does not claim to test accessibility.
 
 ## Why this epic exists
 

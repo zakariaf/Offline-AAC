@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E07 — Edit mode |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | S |
 | **Depends on** | E07-T03 |
 | **Blocks** | Nothing |
