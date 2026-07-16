@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:offline_aac/model/aac_palette.dart';
+import 'package:offline_aac/model/stock.dart';
+
+export 'package:offline_aac/model/aac_palette.dart';
+export 'package:offline_aac/model/stock.dart';
 
 /// The four palettes. The switcher shows three positions
 /// (`paper -> ink -> high contrast`); HC polarity is a settings preference,
 /// not a fourth position — a user mid-shutdown needs one tap to produce one
 /// predictable next state.
-enum AacPalette { paper, ink, hcInk, hcPaper }
-
 /// The four paper stocks, L-ascending.
 ///
 /// Four, not twelve. Named, not numbered. The lightness stagger is the
@@ -13,8 +16,6 @@ enum AacPalette { paper, ink, hcInk, hcPaper }
 /// cannot separate four muted stocks. Staggering lightness instead measures
 /// deutan OKLab dE x100 of 7.00 against an isoluminant alternative's 1.06 —
 /// the same tile twice.
-enum Stock { oxblood, slate, tan, fir }
-
 /// Colour primitives, named `<family><tone>` where tone is the **measured**
 /// OKLCH lightness x100. `Prim.inkT89` is `#DCD9D3` at L 0.886.
 ///

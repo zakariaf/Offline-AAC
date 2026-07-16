@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E03 — Data layer |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | XS |
 | **Depends on** | E03-T01 |
 | **Blocks** | Nothing |
@@ -76,3 +76,10 @@ Future<void> backupIfUpgradePending(File dbFile, int targetVersion) async {
 ## Done when
 
 An upgrade from any older `schemaVersion` leaves a byte-identical copy of the pre-upgrade board on disk, at most two backups exist, and `restorePreviousBoard()` brings the phrases back byte for byte even when the live database is corrupt.
+
+
+---
+
+## What actually happened
+
+backup.dart copies the DB file aside before an upgrade. Four tests: exact byte copy; a missing source is not a failure and logs nothing; a forced failure does not throw out of the startup path and records exactly one line; and no phrase text from a torture fixture ever reaches the log. Added CrashLog.atFile as a test seam so the redaction guarantee could actually be verified.

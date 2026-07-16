@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E03 — Data layer |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | S |
 | **Depends on** | E03-T02 |
 | **Blocks** | Nothing |
@@ -210,3 +210,10 @@ Use the field's own terms in the page: **part-time AAC use**, **intermittent** /
 ## Done when
 
 A fresh install opens straight onto twelve usable tiles, every one of which can name in the source who wrote it, when, and on what evidence.
+
+
+---
+
+## What actually happened
+
+12 phrases as a const Dart list (no asset), seeded in onCreate so it runs once per file and never overwrites a user board. Every label <=16 runes, curly apostrophes, no terminal periods, no bangs. Exactly three attested phrases with provenance; one system repair phrase (Wrong one, oxblood, at row 3 col 1). Stocks 3/3/3/3. Fresh-DB seeding and no-reseed-on-reopen both tested. Required moving Stock to the model layer (re-exported from tokens) so the seed could name it without importing UI.

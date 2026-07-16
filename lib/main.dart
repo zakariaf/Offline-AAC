@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:offline_aac/data/board_repository.dart';
 import 'package:offline_aac/data/crash_log.dart';
 import 'package:offline_aac/data/database/app_database.dart';
+import 'package:offline_aac/data/settings_repository.dart';
 import 'package:offline_aac/data/speech/audio_session_config.dart';
 import 'package:offline_aac/data/speech/flutter_tts_speech_service.dart';
 import 'package:offline_aac/data/speech/speech_service.dart';
@@ -59,7 +60,10 @@ Future<void> main() async {
   };
 
   final db = AppDatabase();
-  final settings = await _readSettings(db, log);
+  // The one read before first paint. It cannot throw — a settings read that
+  // kills launch is a blank window in front of someone who needs words — so a
+  // failure falls back to defaults, loudly in the log and silently on screen.
+  final settings = await _loadSettings(db, log);
   await configureAudioSession();
 
   // Read at speak time, never captured: Android garbage-collects voice data, so
@@ -77,9 +81,7 @@ Future<void> main() async {
         // Restored BEFORE first paint, not corrected on frame 2. A flash of the
         // wrong polarity is a sudden luminance change delivered to someone in a
         // shutdown — the exact event the animation ban exists to prevent.
-        initialPaletteProvider.overrideWithValue(
-          paletteFromName(settings[_kThemeKey]),
-        ),
+        initialPaletteProvider.overrideWithValue(settings.palette),
       ],
       child: const ReedApp(),
     ),
@@ -93,33 +95,21 @@ Future<void> main() async {
     // no Flutter profile surfaces.
     unawaited(speech.warmUp());
     unawaited(
-      _restoreVoice(speech, settings[_kVoiceIdKey], (v) => voice = v),
+      _restoreVoice(speech, settings.voiceId, (v) => voice = v),
     );
   });
 }
 
-/// The persisted palette. One of `paper` / `ink` / `hcInk` / `hcPaper`; an
-/// unknown or corrupt value resolves to `AacPalette.ink` inside
-/// [paletteFromName], never to a null that would leave the theme lookup
-/// asserting on a device with no debugger attached.
-const String _kThemeKey = 'theme';
-
-/// The persisted voice, stored by [Voice.name].
-const String _kVoiceIdKey = 'voice_id';
-
-/// Every stored preference, read before first paint.
+/// Loads every preference before first paint, through the one component that
+/// owns the settings keys and their formats.
 ///
-/// This reaches the `settings` table directly because `SettingsRepository` does
-/// not exist yet. It is two lines and one seam: when the repository lands, this
-/// function is its `load()` call. Nothing else in the app may read these keys.
-///
-/// It cannot throw. A settings read that kills launch is a blank window in
-/// front of someone who needs words; every unreadable value falls back, loudly
-/// in the log and silently on screen.
-Future<Map<String, String>> _readSettings(AppDatabase db, CrashLog log) async {
+/// It cannot throw. A settings read that kills launch is a blank window in front
+/// of someone who needs words, so a failure falls back to [ReedSettings.defaults]
+/// — every field of which is also the value a corrupt entry decodes to — logged
+/// once, silent on screen.
+Future<ReedSettings> _loadSettings(AppDatabase db, CrashLog log) async {
   try {
-    final rows = await db.select(db.settings).get();
-    return {for (final row in rows) row.key: row.value};
+    return await SettingsRepository(db).load();
   } on Exception {
     // The exception is deliberately not interpolated. This log is exported by
     // users, a stored value can be anything, and a redaction slip here mails
@@ -128,7 +118,7 @@ Future<Map<String, String>> _readSettings(AppDatabase db, CrashLog log) async {
       'settings read failed; launching on defaults',
       StackTrace.current,
     );
-    return const {};
+    return const ReedSettings.defaults();
   }
 }
 

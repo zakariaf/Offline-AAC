@@ -28,6 +28,15 @@ final class CrashLog {
   /// the one path with no test coverage.
   const CrashLog.discard() : _file = null;
 
+  /// A log backed by an explicit file, bypassing the directory lookup.
+  ///
+  /// The only reason this is not private: the redaction guarantee — that no
+  /// phrase text ever reaches the log — is a property nothing else can verify.
+  /// A test must be able to point the log at a file it can then read back and
+  /// assert against. It writes through the same [record] as production; only
+  /// the location differs.
+  const CrashLog.atFile(File file) : _file = file;
+
   /// The log file, or null when the path could not be resolved.
   ///
   /// Null is a working log that drops every entry rather than a broken one

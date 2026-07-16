@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E03 — Data layer |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | S |
 | **Depends on** | E03-T01 |
 | **Blocks** | E08-T01 |
@@ -170,3 +170,27 @@ Keeping the value fresh after a settings write is a `Notifier<ReedSettings>` see
 ## Done when
 
 `flutter test test/data/settings_repository_test.dart` passes against real in-memory SQLite, and a device with `theme = dark` and `grid_size = 2x3` paints the dark 2×3 board on its first frame with no flash and no reflow.
+
+
+---
+
+## What actually happened
+
+SettingsRepository + ReedSettings written. Seven keys, private to the file. Enums persist by NAME (asserted on the raw column). Every garbage stored value (empty, trailing-space, NaN, out-of-range, unknown enum, non-bool) falls back and never throws; pitch 99999 clamps to the synthesizer max. upsert leaves one row. Added the pitch/rate ranges and OutputMode to speech_service.dart, their natural home.
+
+### A reconciliation the task spec did not anticipate
+
+The task named `ThemePref { system, light, dark }`. The shipped design has no
+light/dark toggle — it has four palettes (`paper`, `ink`, `hcInk`, `hcPaper`)
+and a three-position switcher. Persisting `ThemePref` would have been a silent
+no-op: the `theme` key stores a palette name like `ink`, which never matches
+`system`/`light`/`dark`, so `load()` would have fallen back to a default on
+every launch, forever, with nothing to report it.
+
+Fixed by persisting `AacPalette` instead. That required moving the enum from the
+UI layer to `lib/model/aac_palette.dart` (re-exported from tokens, exactly the
+move already made for `Stock`) so the data layer can name a palette without
+importing the UI. `main.dart` also stopped reading raw keys and now calls
+`SettingsRepository.load()`, which removed the duplicated `theme`/`voice_id` key
+strings it carried from before the repository existed — so the key strings now
+live in one file, as the task requires.

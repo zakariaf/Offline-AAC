@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Status** | Not started |
+| **Status** | Done — all 6 tasks |
 | **Tasks** | 6 |
 | **Depends on** | E01 (E03-T01 gates on E01-T03 — the schema cannot be snapshotted before the tooling that snapshots it exists) |
 

@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E03 — Data layer |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | M |
 | **Depends on** | E03-T01 |
 | **Blocks** | E03-T06, E05-T02, E05-T08, E09-T01 |
@@ -144,3 +144,10 @@ Future<Tile?> tileAt(int boardId, int row, int col)
 ## Done when
 
 `flutter test test/data/board_repository_test.dart` passes against real in-memory SQLite, proving a deleted tile empties its slot without moving anything else, and no file under `lib/ui/` imports `package:drift`.
+
+
+---
+
+## What actually happened
+
+Repository built in the chain; tests added. watchGrid/readGrid/deleteTile/editTileText covered against a real in-memory DB (not a fake): a delete empties a coordinate and MOVES NO OTHER TILE, asserted per-cell not just by count. label/vocalization/display_text fall back independently, proved with three distinct strings.

@@ -80,3 +80,26 @@ abstract interface class SpeechService {
   /// Already filtered: network_required and notInstalled voices never appear.
   Future<List<Voice>> voices();
 }
+
+/// The pitch range the synthesizer accepts. `1.0` is the natural pitch.
+///
+/// These bounds live here, beside the thing that consumes them, so no other
+/// file invents its own range. Settings clamps a stored pitch to this window
+/// rather than trusting a value read off disk — a corrupt or future-version
+/// value must land somewhere sane, never at a pitch the engine will reject or a
+/// speed no one can follow.
+const double kMinPitch = 0.5;
+const double kMaxPitch = 2;
+const double kDefaultPitch = 1;
+
+/// The speech-rate range. `1.0` is the engine's default speed.
+const double kMinRate = 0.25;
+const double kMaxRate = 2;
+const double kDefaultRate = 1;
+
+/// What a tile tap produces.
+///
+/// The member set is owned here because output is a speech concept. `speak`
+/// synthesises aloud; show puts the words on the poster; both does each.
+/// Settings persists these by their `name`, and parses by name, never index.
+enum OutputMode { speak, show, both }

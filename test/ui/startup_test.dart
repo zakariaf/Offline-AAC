@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:offline_aac/data/board_repository.dart';
 import 'package:offline_aac/data/crash_log.dart';
 import 'package:offline_aac/data/database/app_database.dart';
+import 'package:offline_aac/model/board_grid.dart';
 import 'package:offline_aac/ui/app.dart';
 import 'package:offline_aac/ui/board/board_controller.dart';
 import 'package:offline_aac/ui/board/board_screen.dart';
@@ -23,8 +24,9 @@ void main() {
   late FakeSpeechService speech;
 
   setUp(() {
-    // In-memory: the repository and the joined read are the units under test,
-    // and a real file would make these tests slow enough to stop being run.
+    // A database is still provided because the controller reads it, but the grid
+    // itself is a canned override (see `app`), so nothing here exercises the seed
+    // or the live query stream.
     db = AppDatabase.forTesting(NativeDatabase.memory());
     speech = FakeSpeechService();
   });
@@ -41,6 +43,22 @@ void main() {
         speechServiceProvider.overrideWithValue(withSpeech ?? speech),
         crashLogProvider.overrideWithValue(const CrashLog.discard()),
         initialPaletteProvider.overrideWithValue(palette),
+        // A canned grid, not the live database stream. These tests are about the
+        // launch frame and the theme, not the data layer — the repository tests
+        // own that. Overriding here keeps drift's query-stream infrastructure,
+        // and the coalescing Timer it schedules, out of a test that would
+        // otherwise trip the binding's "a Timer is still pending" invariant for
+        // reasons that have nothing to do with the app.
+        gridProvider.overrideWith(
+          (ref) => Stream.value(
+            BoardGrid(
+              boardId: 1,
+              rows: 4,
+              cols: 3,
+              tiles: List<Tile?>.filled(12, null),
+            ),
+          ),
+        ),
       ],
       child: const ReedApp(),
     );
@@ -52,8 +70,8 @@ void main() {
     ) async {
       await tester.pumpWidget(app());
       // pump, never pumpAndSettle: the app has zero animation, so settling is
-      // meaningless here and is a known flake source. If pumpAndSettle were
-      // ever required, something is animating that should not be.
+      // meaningless here and is a known flake source. If pumpAndSettle were ever
+      // required, something is animating that should not be.
       await tester.pump();
 
       expect(find.byType(BoardScreen), findsOneWidget);

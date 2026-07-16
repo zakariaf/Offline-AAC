@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E03 — Data layer |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | M |
 | **Depends on** | E01-T03 |
 | **Blocks** | E03-T02, E03-T03, E03-T04, E03-T05 |
@@ -152,3 +152,10 @@ Types follow `reed-dart3-idioms`: no `freezed`, no `equatable`. drift's generate
 ## Done when
 
 The six tables exist at `schemaVersion = 1` with the v1 snapshot committed, `PRAGMA foreign_keys` is proven on by test, and deleting a button provably nulls its slot while moving nothing.
+
+
+---
+
+## What actually happened
+
+Schema built in the cold-launch chain; tests added here. PRAGMA foreign_keys=ON verified; composite-PK uniqueness, delete-writes-NULL-and-moves-nothing, and the 2x3 board all exercised against NativeDatabase.memory(). No order/position column on GridSlots.

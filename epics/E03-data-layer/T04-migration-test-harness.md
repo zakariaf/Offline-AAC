@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Epic** | E03 — Data layer |
-| **Status** | Not started |
+| **Status** | Done |
 | **Size** | M |
 | **Depends on** | E03-T01 |
 | **Blocks** | Nothing |
@@ -276,3 +276,12 @@ void main() {
 ## Done when
 
 `flutter test test/drift/` passes on a clean Linux checkout, the CI dump-and-diff gate exits non-zero on a schema change without a `schemaVersion` bump, and a content test proves the torture-fixture phrases and the empty slot survive a migration byte for byte at their original coordinates — including across a v1→v3 skip.
+
+
+---
+
+## What actually happened
+
+Full harness. `drift_dev schema generate --data-classes --companions` and `schema steps` run; DatabaseAtV1 + versioned companions + schema_versions.dart committed. The shape group is the nested for(from)for(to) loop bounded by kLatestSchemaVersion — one `test('v...` in source, grows at runtime, never edited per version. The content test uses testWithDataIntegrity with the torture fixture (curly apostrophe, em dash + Japanese, emoji, quotes+backslash, whitespace-only — no test1/test2): six slots, exactly one null, every phrase byte-for-byte, and PRAGMA foreign_key_check isEmpty. kLatestSchemaVersion single-sources the version so the loop and schemaVersion cannot drift.
+
+Honest note: at v1 old==new, so the migration is degenerate today — but the fixture and assertions are in place, and the harness activates the moment v2 lands.
