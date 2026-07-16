@@ -30,7 +30,18 @@ BANNED = [
      "refused for architectural reasons, not privacy — do not reintroduce transitively without a decision"),
 ]
 
-ALLOW = set()  # add a package name here only alongside a written justification in the repo
+# Add a package here ONLY alongside a written justification in the repo.
+ALLOW = {
+    # http reaches the tree ONLY via file_selector_platform_interface (the OS
+    # document picker's platform interface, chosen over file_picker for
+    # permission-lightness — see the note in pubspec.yaml). The app declares NO
+    # INTERNET permission, so the kernel denies every socket regardless of what
+    # Dart code is linked; the http client is inert. The hard, OS-enforced gate
+    # is test/policy/no_internet_permission_test, which asserts the merged
+    # manifest carries no INTERNET permission. E09 added file_selector but left
+    # this set empty; this restores that documented decision.
+    "http",
+}
 
 
 USAGE = """usage: audit_deps.py <deps.json>
