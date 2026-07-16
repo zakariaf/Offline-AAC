@@ -21,3 +21,35 @@ const String showScreenSettingLabel = 'Show screen: bright · match my theme';
 
 /// The standing-line on/off control.
 const String standingLineSettingLabel = 'Standing line';
+
+/// The edit-mode toggle's VISIBLE chrome — lowercase, authored, never a
+/// transform. `edit` at rest, `done` while editing.
+const String editModeEnterChrome = 'edit';
+const String editModeExitChrome = 'done';
+
+/// The edit-mode toggle's SEMANTIC labels — sentence case, because a screen
+/// reader speaks a sentence, and naming the mode the button PUTS you in, not the
+/// mode you are in, so the announcement is never a lie about what the tap does.
+const String editBoardLabel = 'Edit board';
+const String doneEditingLabel = 'Done editing';
+
+/// The empty slot's label in edit mode. Never 'plus', never ''.
+const String addPhraseLabel = 'Add phrase';
+
+/// The editor's two field names — exactly these words, not label/value, not
+/// short/long. "What you see" is the tile handle; "What it says" is the spoken
+/// sentence, which most users never open.
+const String whatYouSeeLabel = 'What you see';
+const String whatItSaysLabel = 'What it says';
+
+/// The editor's chrome — lowercase, authored, never a transform.
+const String editSaveChrome = 'save';
+const String editCancelChrome = 'cancel';
+
+/// "What it says" is collapsed until opened; this is its opener.
+const String openWhatItSaysChrome = 'set what it says';
+
+/// The save-failure line: state the fact, then the next action. Inline and
+/// non-blocking — never a modal. No apology, no "Sorry", no exclamation.
+const String editSaveFailed = 'That tile didn’t save. Tap it to edit and save '
+    'again.';

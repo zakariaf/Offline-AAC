@@ -4,6 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:offline_aac/data/database/app_database.dart';
 import 'package:offline_aac/model/board_grid.dart';
 
+/// Replace every straight apostrophe with a curly one (U+2019).
+///
+/// The one sanctioned edit to a user's string, applied on save only. A straight
+/// `'` in text that will be READ by a stranger or SPOKEN is a typographic
+/// blemish, not a possession violation to fix — but it is the only fix Reed
+/// makes, and never mid-typing, where retyping under the cursor would be.
+String curlyApostrophes(String text) => text.replaceAll("'", '’');
+
 /// The only thing the UI may ask about boards.
 ///
 /// Concrete, on purpose. There is one environment, no network, no auth, and
@@ -122,8 +130,10 @@ final class BoardRepository {
           .insert(
             ButtonsCompanion.insert(
               boardId: boardId,
-              label: label,
-              vocalization: Value<String?>(vocalization),
+              label: curlyApostrophes(label),
+              vocalization: Value<String?>(
+                vocalization == null ? null : curlyApostrophes(vocalization),
+              ),
               displayText: Value<String?>(displayText),
               // The user placed it, so it is theirs from birth: no future seed
               // step, default-set update, or migration may ever touch it.
@@ -167,9 +177,18 @@ final class BoardRepository {
           _db.buttons,
         )..where((b) => b.id.equals(buttonId))).write(
           ButtonsCompanion(
-            label: Value<String>(label),
-            vocalization: Value<String?>(vocalization),
+            // Straight-to-curly is the SINGLE sanctioned edit to a user's
+            // string, and it happens here, on save — never under a live cursor,
+            // where retyping a character is a possession violation. Nothing else
+            // is touched: no case change, no trim, no appended period.
+            label: Value<String>(curlyApostrophes(label)),
+            vocalization: Value<String?>(
+              vocalization == null ? null : curlyApostrophes(vocalization),
+            ),
             displayText: Value<String?>(displayText),
+            // The one-way latch. From the first save forward this row is the
+            // user's, and no seed step, migration, or default-set update may
+            // ever overwrite it. It is never written back to false anywhere.
             userEdited: const Value<bool>(true),
             updatedAt: Value<DateTime>(DateTime.now()),
           ),
@@ -180,8 +199,27 @@ final class BoardRepository {
   }
 
   /// Hide, never delete. Removing content from view is not a reason to destroy
-  /// it — the row survives and un-hiding is free.
+  /// it — the row survives, the slot keeps pointing at it, so the coordinate,
+  /// the phrase, and every field are intact and Unhide is a one-tap reversal.
+  /// It touches `buttons` only; `grid_slots` is never a NULL for a hide.
+  ///
+  /// The repair phrase (`is_system = 1`) cannot be hidden — guarded HERE, not
+  /// only in the widget, because a rule enforced by a widget is a rule one
+  /// screen away from being gone. Unhiding is always allowed.
   Future<void> setHidden(int buttonId, {required bool hidden}) async {
+    if (hidden) {
+      final button = await (_db.select(
+        _db.buttons,
+      )..where((b) => b.id.equals(buttonId))).getSingleOrNull();
+      if (button == null) {
+        throw StateError('No button #$buttonId to hide.');
+      }
+      if (button.isSystem) {
+        throw StateError(
+          'Button #$buttonId is the repair phrase and cannot be hidden.',
+        );
+      }
+    }
     final updated =
         await (_db.update(
           _db.buttons,
@@ -194,6 +232,105 @@ final class BoardRepository {
         );
     if (updated != 1) {
       throw StateError('No button #$buttonId to hide.');
+    }
+  }
+
+  /// Move the tile at `(row, col)` up one row in its column; [moveDown] moves it
+  /// down. Movement is vertical only, within a column.
+  ///
+  /// A move NEVER touches `row_index` or `col_index` — those are the primary key
+  /// and position IS the key. It swaps the `button_id` of two slot rows that
+  /// already exist, in one transaction, reading both before writing either. So
+  /// a board always holds exactly `grid_rows x grid_cols` slot rows before and
+  /// after, nothing reflows, and swapping with an empty slot (the normal case)
+  /// simply lands the empty where the tile was.
+  ///
+  /// Bounds come from the board row, never a `const kRows`: the 2x3 crisis
+  /// layout ships alongside the 3x4 default and must move here unchanged. The
+  /// boundary controls are not rendered at row 0 / the last row, so this being
+  /// reachable would be a defect — it throws rather than silently doing nothing.
+  Future<void> moveUp(int boardId, int row, int col) async {
+    final board = await _requireBoard(boardId);
+    _checkBounds(board, row, col);
+    if (row == 0) {
+      throw StateError('Cannot move a tile above row 0.');
+    }
+    await _swap(boardId, row, col, row - 1, col);
+  }
+
+  Future<void> moveDown(int boardId, int row, int col) async {
+    final board = await _requireBoard(boardId);
+    _checkBounds(board, row, col);
+    if (row == board.gridRows - 1) {
+      throw StateError('Cannot move a tile below the last row.');
+    }
+    await _swap(boardId, row, col, row + 1, col);
+  }
+
+  /// Swap the `button_id` of two existing slot rows and stamp the moved
+  /// button(s) as user-edited — all in one transaction, so a crash between the
+  /// two writes can never leave one button in two slots or in none.
+  Future<void> _swap(
+    int boardId,
+    int rowA,
+    int colA,
+    int rowB,
+    int colB,
+  ) async {
+    await _db.transaction(() async {
+      // Read BOTH before writing EITHER: a read-modify-read-modify would
+      // overwrite one tile with the other and destroy a phrase.
+      final buttonA = await _buttonIdAt(boardId, rowA, colA);
+      final buttonB = await _buttonIdAt(boardId, rowB, colB);
+
+      await _setButtonIdAt(boardId, rowA, colA, buttonB);
+      await _setButtonIdAt(boardId, rowB, colB, buttonA);
+
+      // A move is the user touching the tile: user_edited = 1 is the hard stop
+      // that keeps a future default-set update from overwriting a moved tile.
+      for (final id in <int?>{buttonA, buttonB}) {
+        if (id == null) continue;
+        await (_db.update(
+          _db.buttons,
+        )..where((b) => b.id.equals(id))).write(
+          ButtonsCompanion(
+            userEdited: const Value<bool>(true),
+            updatedAt: Value<DateTime>(DateTime.now()),
+          ),
+        );
+      }
+    });
+  }
+
+  Future<int?> _buttonIdAt(int boardId, int row, int col) async {
+    final slot = await (_db.select(_db.gridSlots)..where(
+          (s) =>
+              s.boardId.equals(boardId) &
+              s.rowIndex.equals(row) &
+              s.colIndex.equals(col),
+        ))
+        .getSingleOrNull();
+    if (slot == null) {
+      throw StateError('Board $boardId has no slot at ($row, $col).');
+    }
+    return slot.buttonId;
+  }
+
+  Future<void> _setButtonIdAt(
+    int boardId,
+    int row,
+    int col,
+    int? buttonId,
+  ) async {
+    final updated = await (_db.update(_db.gridSlots)..where(
+          (s) =>
+              s.boardId.equals(boardId) &
+              s.rowIndex.equals(row) &
+              s.colIndex.equals(col),
+        ))
+        .write(GridSlotsCompanion(buttonId: Value<int?>(buttonId)));
+    if (updated != 1) {
+      throw StateError('Board $boardId has no slot at ($row, $col).');
     }
   }
 

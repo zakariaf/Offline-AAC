@@ -108,6 +108,34 @@ final class Tile {
     borderColor,
   );
 
+  Tile copyWith({
+    int? buttonId,
+    int? row,
+    int? col,
+    String? label,
+    String? vocalization,
+    String? displayText,
+    bool? hidden,
+    bool? isSystem,
+    int? priority,
+  }) {
+    return Tile(
+      buttonId: buttonId ?? this.buttonId,
+      row: row ?? this.row,
+      col: col ?? this.col,
+      label: label ?? this.label,
+      vocalization: vocalization ?? this.vocalization,
+      displayText: displayText ?? this.displayText,
+      hidden: hidden ?? this.hidden,
+      isSystem: isSystem ?? this.isSystem,
+      priority: priority ?? this.priority,
+      imagePath: imagePath,
+      imageAttribution: imageAttribution,
+      backgroundColor: backgroundColor,
+      borderColor: borderColor,
+    );
+  }
+
   @override
   String toString() => 'Tile(#$buttonId at $row,$col: $label)';
 }

@@ -34,14 +34,27 @@ final StreamProvider<BoardGrid> gridProvider = StreamProvider<BoardGrid>((
   ref,
 ) async* {
   final repository = ref.watch(boardRepositoryProvider);
-  yield* repository.watchGrid(await repository.rootBoardId());
+  // includeHidden: a hidden tile stays IN the grid so edit mode can show it and
+  // offer Unhide. The tile carries its `hidden` flag; PhraseTile renders it as
+  // an empty cell in speak mode and as a visible, unhide-able tile in edit mode.
+  // Resolving hidden->empty at read time here would make Unhide unreachable.
+  yield* repository.watchGrid(
+    await repository.rootBoardId(),
+    includeHidden: true,
+  );
 });
 
 /// What the board surface renders beyond the grid itself: which tile is lit,
 /// and the words that did not make it out of the speaker.
 @immutable
 final class BoardUiState {
-  const BoardUiState({this.litRow, this.litCol, this.fallbackText});
+  const BoardUiState({
+    this.litRow,
+    this.litCol,
+    this.fallbackText,
+    this.editing = false,
+    this.editingSlot,
+  });
 
   /// The coordinate of the tile that is currently speaking, or null.
   ///
@@ -57,7 +70,36 @@ final class BoardUiState {
   /// the worst outcome this app can produce, and no user will report it.
   final String? fallbackText;
 
+  /// Whether the board is in edit mode. State, not a route: a mode duplicated
+  /// into a second navigator entry drifts from the board it edits.
+  ///
+  /// Starts false on every launch and is NEVER persisted — a board that reopens
+  /// in edit mode is a board that silently does not speak when tapped, and the
+  /// user has no way to know why.
+  final bool editing;
+
+  /// The `(row, col)` whose editor is open, or null when the grid is showing.
+  /// A coordinate, never a captured tile: the editor resolves the phrase from
+  /// the live grid so a fast re-open after a save never edits stale content.
+  final (int row, int col)? editingSlot;
+
   bool isLit(int row, int col) => row == litRow && col == litCol;
+
+  BoardUiState copyWith({
+    int? litRow,
+    int? litCol,
+    String? fallbackText,
+    bool? editing,
+    (int, int)? editingSlot,
+  }) {
+    return BoardUiState(
+      litRow: litRow ?? this.litRow,
+      litCol: litCol ?? this.litCol,
+      fallbackText: fallbackText ?? this.fallbackText,
+      editing: editing ?? this.editing,
+      editingSlot: editingSlot ?? this.editingSlot,
+    );
+  }
 
   @override
   bool operator ==(Object other) =>
@@ -65,10 +107,13 @@ final class BoardUiState {
       other is BoardUiState &&
           other.litRow == litRow &&
           other.litCol == litCol &&
-          other.fallbackText == fallbackText;
+          other.fallbackText == fallbackText &&
+          other.editing == editing &&
+          other.editingSlot == editingSlot;
 
   @override
-  int get hashCode => Object.hash(litRow, litCol, fallbackText);
+  int get hashCode =>
+      Object.hash(litRow, litCol, fallbackText, editing, editingSlot);
 }
 
 /// The board's behaviour: press, speak, stop, and the lit latch.
@@ -174,6 +219,70 @@ class BoardController extends Notifier<BoardUiState> {
     if (tile == null) return;
 
     _speak(tile.vocalization, litRow: row, litCol: col);
+  }
+
+  /// Flip edit mode. A tap on a labelled, visible button, never a hidden
+  /// long-press: long-press collides with dwell-style assistive input, where
+  /// holding IS ordinary activation, and it is an invisible state machine
+  /// nothing on screen describes.
+  ///
+  /// Any in-flight utterance is stopped as part of the switch — the lit latch
+  /// belongs to speak mode, and a tile left lit into the editor is a lie about
+  /// what the board is doing.
+  void toggleEditing() {
+    final next = !state.editing;
+    if (state.litRow != null) {
+      // _stop() resets the whole state to a resting speak-mode default, so the
+      // new editing flag is re-applied on the clean state below.
+      _stop();
+    }
+    state = state.copyWith(editing: next);
+  }
+
+  /// A tile or empty slot was tapped IN EDIT MODE. Opens the editor for that
+  /// coordinate rather than speaking.
+  ///
+  /// The coordinate is the primary key and cannot go stale; the editor resolves
+  /// the tile from it at open time. The editor surface itself is E07-T02; this
+  /// is the routing seam the tile taps into.
+  void onEditPressed(int row, int col) {
+    state = state.copyWith(editingSlot: (row, col));
+  }
+
+  /// Close the editor and return to the grid. Editing stays on — closing one
+  /// tile's editor does not leave edit mode.
+  void closeEditor() {
+    if (state.editingSlot == null) return;
+    state = BoardUiState(editing: state.editing);
+  }
+
+  /// Move the tile at `(row, col)` up / down one row. Void, and the failure goes
+  /// to the crash log rather than being dropped silently — the drift stream
+  /// re-emits the new board, so there is no UI state to roll back here.
+  void moveTileUp(int row, int col) =>
+      _runEdit((repo, boardId) => repo.moveUp(boardId, row, col));
+
+  void moveTileDown(int row, int col) =>
+      _runEdit((repo, boardId) => repo.moveDown(boardId, row, col));
+
+  /// Hide / unhide a button. Hide is the undo for removal; nothing is deleted.
+  void hideTile(int buttonId) =>
+      _runEdit((repo, _) => repo.setHidden(buttonId, hidden: true));
+
+  void unhideTile(int buttonId) =>
+      _runEdit((repo, _) => repo.setHidden(buttonId, hidden: false));
+
+  void _runEdit(
+    Future<void> Function(BoardRepository repo, int boardId) op,
+  ) {
+    final grid = ref.read(gridProvider).valueOrNull;
+    if (grid == null) return;
+    final repo = ref.read(boardRepositoryProvider);
+    unawaited(
+      op(repo, grid.boardId).catchError((Object error, StackTrace stack) {
+        _log('board edit failed: $error', stack);
+      }),
+    );
   }
 
   /// The type-to-speak field was submitted. Void, for the same reason.

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:offline_aac/ui/app.dart';
 import 'package:offline_aac/ui/board/phrase_tile.dart';
 import 'package:offline_aac/ui/core/tokens.dart';
+import 'package:offline_aac/ui/strings.dart';
 
 import '../support/tiles.dart';
 
@@ -33,6 +34,7 @@ void main() {
           tile: tile,
           lit: false,
           onPressed: (_, _) {},
+          onEdit: (_, _) {},
         ),
       ),
     );
@@ -58,6 +60,7 @@ void main() {
           tile: tile,
           lit: false,
           onPressed: (_, _) {},
+          onEdit: (_, _) {},
         ),
       ),
     );
@@ -77,6 +80,7 @@ void main() {
           tile: tile,
           lit: true,
           onPressed: (_, _) {},
+          onEdit: (_, _) {},
         ),
       ),
     );
@@ -106,6 +110,7 @@ void main() {
             calls++;
             got = (r, c);
           },
+          onEdit: (_, _) {},
         ),
       ),
     );
@@ -131,6 +136,7 @@ void main() {
       tile: null,
       lit: false,
       onPressed: _noop,
+      onEdit: _noop,
     );
 
     testWidgets('has no semantics node in speak mode', (tester) async {
@@ -157,6 +163,7 @@ void main() {
             tile: null,
             lit: false,
             onPressed: (_, _) => calls++,
+            onEdit: (_, _) {},
           ),
         ),
       );
@@ -192,6 +199,79 @@ void main() {
         ),
       );
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('in edit mode it becomes a labelled Add-phrase button', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        host(
+          const PhraseTile(
+            row: 1,
+            col: 2,
+            tile: null,
+            lit: false,
+            editing: true,
+            onPressed: _noop,
+            onEdit: _noop,
+          ),
+        ),
+      );
+      // The single highest-severity failure this flip prevents: a `+` that
+      // paints but is not in the tree, so switch access can never fill a slot.
+      expect(
+        tester.getSemantics(find.byType(PhraseTile)),
+        isSemantics(isButton: true, label: addPhraseLabel),
+      );
+    });
+
+    testWidgets('the edit-mode + passes its coordinate to onEdit', (
+      tester,
+    ) async {
+      (int, int)? edited;
+      await tester.pumpWidget(
+        host(
+          PhraseTile(
+            row: 1,
+            col: 2,
+            tile: null,
+            lit: false,
+            editing: true,
+            onPressed: _noop,
+            onEdit: (r, c) => edited = (r, c),
+          ),
+        ),
+      );
+      await tester.tap(find.byType(PhraseTile));
+      expect(edited, equals((1, 2)));
+    });
+
+    testWidgets('the empty cell occupies the same rect in both modes', (
+      tester,
+    ) async {
+      await tester.pumpWidget(host(empty));
+      final resting = tester.getRect(find.byType(PhraseTile));
+
+      await tester.pumpWidget(
+        host(
+          const PhraseTile(
+            row: 1,
+            col: 2,
+            tile: null,
+            lit: false,
+            editing: true,
+            onPressed: _noop,
+            onEdit: _noop,
+          ),
+        ),
+      );
+      final editingRect = tester.getRect(find.byType(PhraseTile));
+
+      expect(
+        editingRect,
+        equals(resting),
+        reason: 'the + must not collapse or pull the next tile in',
+      );
     });
   });
 }

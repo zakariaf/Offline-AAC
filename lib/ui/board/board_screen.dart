@@ -5,9 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:offline_aac/model/board_grid.dart';
 import 'package:offline_aac/ui/board/board_controller.dart';
 import 'package:offline_aac/ui/board/compose_field.dart';
+import 'package:offline_aac/ui/board/edit_mode_button.dart';
 import 'package:offline_aac/ui/board/phrase_tile.dart';
 import 'package:offline_aac/ui/board/responsive_grid.dart';
 import 'package:offline_aac/ui/core/tokens.dart';
+import 'package:offline_aac/ui/edit/tile_editor.dart';
 
 /// The board plane's shape before the board itself has arrived.
 ///
@@ -25,6 +27,22 @@ class BoardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = AacTheme.of(context);
+
+    // The editor is a state-driven surface, not a route: no Navigator.push, no
+    // PageRoute, so it can never drift from the board it edits. When a slot is
+    // open, the screen shows its editor in place — inline and non-blocking, no
+    // modal to trap someone whose decision-making is the impaired thing.
+    final editingSlot = ref.watch(
+      boardControllerProvider.select((s) => s.editingSlot),
+    );
+    if (editingSlot != null) {
+      final (row, col) = editingSlot;
+      return Scaffold(
+        backgroundColor: t.ground,
+        resizeToAvoidBottomInset: true,
+        body: TileEditor(row: row, col: col),
+      );
+    }
 
     // The board failing to load is a real failure with no other channel: no
     // telemetry, and a user staring at twelve empty cells does not file a bug.
@@ -73,6 +91,15 @@ class BoardScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
+              // The board chrome. One visible control today — the edit toggle —
+              // right-aligned so it does not sit under a thumb reaching for a
+              // tile. A hidden gesture would be unreachable by switch and screen
+              // reader; a button is not.
+              const Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: EditModeButton(),
+              ),
+              const SizedBox(height: Geom.gapRow),
               // The compose field doubles as the fallback surface: when speech
               // fails, it fills with the words that did not leave the speaker,
               // so a tap always yields speech OR visible text, never neither.
@@ -126,7 +153,8 @@ class _BoardPlane extends StatelessWidget {
       return _fixedGrid(
         rows: _kShellRows,
         cols: _kShellCols,
-        cellAt: (row, col) => _BoardCell(row: row, col: col, tile: null),
+        cellAt: (row, col) =>
+            _BoardCell(row: row, col: col, rowCount: _kShellRows, tile: null),
       );
     }
 
@@ -193,6 +221,9 @@ class _BoardPlane extends StatelessWidget {
           return _BoardCell(
             row: logicalRow,
             col: logicalCol,
+            // The board's LOGICAL row count, so a tile knows whether it can move
+            // down — the reflow's visual row count is a different number.
+            rowCount: board.rows,
             tile: board.tiles[index],
           );
         }
@@ -285,16 +316,27 @@ class _BoardPlane extends StatelessWidget {
 /// One cell: the only thing on the board that watches the lit state, and it
 /// watches only its own.
 class _BoardCell extends ConsumerWidget {
-  const _BoardCell({required this.row, required this.col, required this.tile});
+  const _BoardCell({
+    required this.row,
+    required this.col,
+    required this.rowCount,
+    required this.tile,
+  });
 
   final int row;
   final int col;
+  final int rowCount;
   final Tile? tile;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lit = ref.watch(
       boardControllerProvider.select((s) => s.isLit(row, col)),
+    );
+    // Edit mode is app state, so it comes from Riverpod. Watched here per-cell
+    // rather than threaded down so a mode flip rebuilds only the tiles.
+    final editing = ref.watch(
+      boardControllerProvider.select((s) => s.editing),
     );
     return PhraseTile(
       // Cheap, and it makes the intent legible. The composite (board_id, row,
@@ -306,6 +348,19 @@ class _BoardCell extends ConsumerWidget {
       col: col,
       tile: tile,
       lit: lit,
+      editing: editing,
+      rowCount: rowCount,
+      // Edit-mode reorder and hide route through the controller, which resolves
+      // the board id and writes in one transaction. Coordinates and the button
+      // id, never captured content.
+      onMoveUp: (r, c) =>
+          ref.read(boardControllerProvider.notifier).moveTileUp(r, c),
+      onMoveDown: (r, c) =>
+          ref.read(boardControllerProvider.notifier).moveTileDown(r, c),
+      onHide: (buttonId) =>
+          ref.read(boardControllerProvider.notifier).hideTile(buttonId),
+      onUnhide: (buttonId) =>
+          ref.read(boardControllerProvider.notifier).unhideTile(buttonId),
       // ref.read INSIDE the callback, and coordinates rather than content. The
       // watched value from build() would be the phrase as it was at the last
       // rebuild: a fast re-tap after an edit would speak the previous sentence.
@@ -315,6 +370,11 @@ class _BoardCell extends ConsumerWidget {
       // no lint reports it.
       onPressed: (r, c) =>
           ref.read(boardControllerProvider.notifier).onTilePressed(r, c),
+      // In edit mode a tap on a filled tile or an empty slot opens the editor
+      // for that coordinate instead of speaking. Resolved at tap time from the
+      // (row, col) key, never captured content.
+      onEdit: (r, c) =>
+          ref.read(boardControllerProvider.notifier).onEditPressed(r, c),
     );
   }
 }

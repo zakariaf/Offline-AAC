@@ -9,6 +9,7 @@ import 'package:offline_aac/model/aac_palette.dart';
 import 'package:offline_aac/model/board_grid.dart';
 import 'package:offline_aac/ui/app.dart';
 import 'package:offline_aac/ui/board/board_controller.dart';
+import 'package:offline_aac/ui/board/board_screen.dart';
 
 import 'fake_speech_service.dart';
 import 'fonts.dart';
@@ -67,6 +68,7 @@ extension AacHarness on WidgetTester {
     AppDatabase? db,
     AacPalette palette = AacPalette.ink,
     CrashLog crashLog = const CrashLog.discard(),
+    bool editing = false,
   }) async {
     // The board sizes its columns by MEASURING labels, so the whole suite must
     // render the shipped face. Under the default Ahem test font the fat glyphs
@@ -95,6 +97,11 @@ extension AacHarness on WidgetTester {
 
     await pumpWidget(
       ProviderScope(
+        // A fresh key so a test that pumps more than once (a scale sweep, an
+        // edit-then-reopen) gets a clean container each time instead of reusing
+        // one whose board-controller state — a still-open editor, a lit tile —
+        // leaked from the previous pump.
+        key: UniqueKey(),
         overrides: overrides,
         child: MediaQuery(
           data: MediaQueryData(
@@ -111,5 +118,16 @@ extension AacHarness on WidgetTester {
     // the app has zero animation and settling is a known flake source.
     await pump();
     await pump();
+
+    // Edit mode is board state, not a route: flip it through the controller the
+    // app already owns, exactly as the visible toggle does, then settle the one
+    // rebuild it causes.
+    if (editing) {
+      final container = ProviderScope.containerOf(
+        element(find.byType(BoardScreen)),
+      );
+      container.read(boardControllerProvider.notifier).toggleEditing();
+      await pump();
+    }
   }
 }

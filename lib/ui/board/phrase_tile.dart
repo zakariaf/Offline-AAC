@@ -5,6 +5,7 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:offline_aac/model/board_grid.dart';
 import 'package:offline_aac/ui/core/tokens.dart';
+import 'package:offline_aac/ui/strings.dart';
 
 /// The most lines a label is ever laid out on.
 ///
@@ -57,6 +58,13 @@ class PhraseTile extends StatelessWidget {
     required this.tile,
     required this.lit,
     required this.onPressed,
+    required this.onEdit,
+    this.editing = false,
+    this.rowCount = 1,
+    this.onMoveUp,
+    this.onMoveDown,
+    this.onHide,
+    this.onUnhide,
     super.key,
   });
 
@@ -82,21 +90,78 @@ class PhraseTile extends StatelessWidget {
   /// error.
   final void Function(int row, int col) onPressed;
 
+  /// Whether the board is in edit mode. Flips the empty slot from an excluded
+  /// nothing to a real `+` target, and routes a filled tile's tap to [onEdit]
+  /// instead of speaking.
+  final bool editing;
+
+  /// Opens the editor for this coordinate — a filled tile in edit mode, or an
+  /// empty slot's `+`. Coordinate, never captured content, for the same reason
+  /// as [onPressed].
+  final void Function(int row, int col) onEdit;
+
+  /// The board's logical row count, so a tile knows whether it can move down.
+  /// Read from the board row, never a const — the 2x3 layout ships alongside 3x4.
+  final int rowCount;
+
+  /// Edit-mode reorder and hide. Move takes the coordinate; hide/unhide take the
+  /// button id. Null callbacks (and boundary positions / the system phrase) mean
+  /// the control is not rendered at all — never a disabled pixel that accepts a
+  /// tap and does nothing.
+  final void Function(int row, int col)? onMoveUp;
+  final void Function(int row, int col)? onMoveDown;
+  final void Function(int buttonId)? onHide;
+  final void Function(int buttonId)? onUnhide;
+
   @override
   Widget build(BuildContext context) {
     final phrase = tile;
-    if (phrase == null) {
-      // Ground, nothing else. No fill, no keyline, no target, and no semantics
-      // node — excluded, not disabled. A disabled node still costs a Switch
-      // Access scan step, and at 1s/step every burned step is a real second
-      // someone spends unable to speak. The cell still holds its full size: a
-      // collapsed cell drags the next tile into a position muscle memory has
-      // already claimed.
-      //
-      // Edit mode turns this same cell into a full target with a keyline, a `+`
-      // and full semantics. That is a mode flag through this branch, not a
-      // different widget.
-      return const ExcludeSemantics(child: SizedBox.expand());
+    // A hidden tile is indistinguishable from an empty slot in SPEAK mode: it
+    // resolves to ground here, so the coordinate holds but nothing is announced.
+    if (phrase == null || (phrase.hidden && !editing)) {
+      // Speak mode: ground, nothing else. No fill, no keyline, no target, and no
+      // semantics node — excluded, not disabled. A disabled node still costs a
+      // Switch Access scan step, and at 1s/step every burned step is a real
+      // second someone spends unable to speak. The cell still holds its full
+      // size: a collapsed cell drags the next tile into a position muscle memory
+      // has already claimed.
+      if (!editing) {
+        return const ExcludeSemantics(child: SizedBox.expand());
+      }
+      // Edit mode + EMPTY slot: the socket becomes a full target — keyline, a
+      // `+`, and a real button node. Mode-dependent, because a static
+      // ExcludeSemantics here is the single most likely defect: the `+` paints
+      // and is completely unreachable by switch access, so an empty slot can
+      // never be filled. (A hidden tile in edit mode never reaches this branch —
+      // it renders below, visible, with an Unhide control.)
+      return Semantics(
+        container: true,
+        button: true,
+        enabled: true,
+        label: addPhraseLabel,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => onEdit(row, col),
+          child: const ExcludeSemantics(child: _EmptySlotFace()),
+        ),
+      );
+    }
+
+    // Edit mode, filled (or hidden) tile: the face edits the text on tap, and
+    // reorder / hide / unhide are separate, labelled controls — never a drag,
+    // which TalkBack and Switch Access cannot reach.
+    if (editing) {
+      return _EditTile(
+        row: row,
+        col: col,
+        rowCount: rowCount,
+        tile: phrase,
+        onEdit: onEdit,
+        onMoveUp: onMoveUp,
+        onMoveDown: onMoveDown,
+        onHide: onHide,
+        onUnhide: onUnhide,
+      );
     }
 
     // Platform accessibility state comes from the tree, at build time.
@@ -105,6 +170,9 @@ class PhraseTile extends StatelessWidget {
     // rebuild for a hand-synced one that is stale for a frame, in the one area
     // where being wrong is total failure.
     final boldText = MediaQuery.boldTextOf(context);
+
+    // Reached only in speak mode (edit mode returned above), so a tap speaks.
+    void handleTap() => onPressed(row, col);
 
     return Semantics(
       container: true,
@@ -129,7 +197,7 @@ class PhraseTile extends StatelessWidget {
       // Screen-reader activation arrives as a semantics action, not as a
       // pointer event, so the Listener below never sees it. Without this,
       // double-tap under TalkBack does nothing at all — silently.
-      onTap: () => onPressed(row, col),
+      onTap: handleTap,
       child: Actions(
         actions: <Type, Action<Intent>>{
           // Enter and Space on a focused tile. WidgetsApp already maps both to
@@ -137,7 +205,7 @@ class PhraseTile extends StatelessWidget {
           // feature.
           ActivateIntent: CallbackAction<ActivateIntent>(
             onInvoke: (_) {
-              onPressed(row, col);
+              handleTap();
               return null;
             },
           ),
@@ -164,7 +232,7 @@ class PhraseTile extends StatelessWidget {
                 // which is why this cannot be a pointer-down handler. The cost is
                 // that speech lands on release rather than press — a deliberate
                 // AAC tap absorbs that; a scroll silently must not speak.
-                onTap: () => onPressed(row, col),
+                onTap: handleTap,
                 child: Stack(
                   clipBehavior: Clip.none,
                   fit: StackFit.expand,
@@ -380,5 +448,203 @@ class _TileLabel extends StatelessWidget {
     painter.dispose();
 
     return lines > kMaxLabelLines ? label.replaceAll('\n', ' ') : label;
+  }
+}
+
+/// The empty slot's face IN EDIT MODE: a keyline and a centred `+`, nothing
+/// else. Speak mode never builds this — the socket is ground and excluded there.
+///
+/// The keyline is the tile's own — [AacTheme.keylineWidthOf] resolves the
+/// per-dpr hairline in a stock palette and the promoted solid 3dp in high
+/// contrast, so this never branches on the palette and never drifts from the
+/// filled tile beside it. Never `Border.all()` (1 logical px is three physical
+/// pixels, a table rule not a hairline) and never `ContinuousRectangleBorder`
+/// (it centres its stroke regardless of strokeAlign and degenerates at this
+/// radius); [RoundedSuperellipseBorder] is first-party with an Impeller path.
+class _EmptySlotFace extends StatelessWidget {
+  const _EmptySlotFace();
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AacTheme.of(context);
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+
+    return DecoratedBox(
+      decoration: ShapeDecoration(
+        shape: RoundedSuperellipseBorder(
+          borderRadius: const BorderRadius.all(
+            Radius.circular(Geom.tileRadius),
+          ),
+          side: BorderSide(
+            color: t.keyline,
+            width: t.keylineWidthOf(dpr),
+            // Stated, not inherited: a centred stroke paints half the keyline
+            // outside the shape and doubles the hairline into a table rule.
+            // ignore: avoid_redundant_argument_values
+            strokeAlign: BorderSide.strokeAlignInside,
+          ),
+        ),
+      ),
+      child: Center(
+        child: Icon(Icons.add_rounded, color: t.inkDim, size: 28),
+      ),
+    );
+  }
+}
+
+/// A filled tile IN EDIT MODE: its face edits the text on tap, with reorder and
+/// hide as separate, labelled controls.
+///
+/// Every affordance is a labelled button, never a drag — a drag is unreachable
+/// by TalkBack and Switch Access and hostile to one-handed or tremoring use, and
+/// an accidental drag silently repoints muscle memory. Boundary and system-phrase
+/// controls are ABSENT, not disabled: a control that renders and quietly does
+/// nothing teaches the user the app is broken. `explicitChildNodes` keeps each
+/// control a separate node instead of merging into the tile's label.
+class _EditTile extends StatelessWidget {
+  const _EditTile({
+    required this.row,
+    required this.col,
+    required this.rowCount,
+    required this.tile,
+    required this.onEdit,
+    required this.onMoveUp,
+    required this.onMoveDown,
+    required this.onHide,
+    required this.onUnhide,
+  });
+
+  final int row;
+  final int col;
+  final int rowCount;
+  final Tile tile;
+  final void Function(int row, int col) onEdit;
+  final void Function(int row, int col)? onMoveUp;
+  final void Function(int row, int col)? onMoveDown;
+  final void Function(int buttonId)? onHide;
+  final void Function(int buttonId)? onUnhide;
+
+  @override
+  Widget build(BuildContext context) {
+    final bold = MediaQuery.boldTextOf(context);
+    final hidden = tile.hidden;
+    final canUp = row > 0 && onMoveUp != null;
+    final canDown = row < rowCount - 1 && onMoveDown != null;
+
+    return Semantics(
+      container: true,
+      explicitChildNodes: true,
+      // Traversal order stays authored by priority even in edit mode, so the
+      // board a switch user learned by ear does not reorder under them.
+      sortKey: OrdinalSortKey(tile.priority.toDouble()),
+      child: Stack(
+        clipBehavior: Clip.none,
+        fit: StackFit.expand,
+        children: <Widget>[
+          Semantics(
+            button: true,
+            label: 'Edit ${tile.label}',
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => onEdit(row, col),
+              child: ExcludeSemantics(
+                child: _TileFace(
+                  label: tile.label,
+                  stock: _stockOf(tile),
+                  diverges: tile.vocalization != tile.label,
+                  lit: false,
+                  bold: bold,
+                ),
+              ),
+            ),
+          ),
+          // A hidden tile's only control is Unhide — its presence, not any
+          // colour, is what says the tile is hidden.
+          if (hidden && onUnhide != null)
+            _EditControl(
+              alignment: AlignmentDirectional.center,
+              icon: Icons.visibility_outlined,
+              label: 'Unhide ${tile.label}',
+              onTap: () => onUnhide!(tile.buttonId),
+            ),
+          if (!hidden) ...<Widget>[
+            if (canUp)
+              _EditControl(
+                alignment: AlignmentDirectional.topCenter,
+                icon: Icons.keyboard_arrow_up_rounded,
+                // The DISPLAY label, never the vocalization: a scanning user must
+                // not hear the whole sentence on every step.
+                label: 'Move ${tile.label} up',
+                onTap: () => onMoveUp!(row, col),
+              ),
+            if (canDown)
+              _EditControl(
+                alignment: AlignmentDirectional.bottomCenter,
+                icon: Icons.keyboard_arrow_down_rounded,
+                label: 'Move ${tile.label} down',
+                onTap: () => onMoveDown!(row, col),
+              ),
+            // The repair phrase (is_system) is never hidable — no control at all.
+            if (!tile.isSystem && onHide != null)
+              _EditControl(
+                alignment: AlignmentDirectional.topEnd,
+                icon: Icons.visibility_off_outlined,
+                label: 'Hide ${tile.label}',
+                onTap: () => onHide!(tile.buttonId),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// One small labelled control on an edit-mode tile. The icon is decorative — the
+/// Semantics announces the action — so it is excluded, never doubly labelled.
+class _EditControl extends StatelessWidget {
+  const _EditControl({
+    required this.alignment,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final AlignmentGeometry alignment;
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AacTheme.of(context);
+    return Align(
+      alignment: alignment,
+      child: Semantics(
+        button: true,
+        label: label,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: ExcludeSemantics(
+            child: Padding(
+              padding: const EdgeInsets.all(2),
+              child: DecoratedBox(
+                decoration: ShapeDecoration(
+                  color: t.ground,
+                  shape: RoundedSuperellipseBorder(
+                    borderRadius: const BorderRadius.all(Radius.circular(8)),
+                    side: BorderSide(color: t.keyline),
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Icon(icon, size: 20, color: t.ink),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
