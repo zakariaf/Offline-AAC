@@ -38,15 +38,16 @@ is ever caught, and each guards a top-severity failure: an editor only a sighted
 touch user can drive means a caregiver picks the words that come out of someone's
 mouth.
 
-- [ ] **Switch Access, whole loop.** Using ONLY a switch: enter edit mode, reach
-  an empty slot, add a phrase, dictate into "What you see" and "What it says"
-  with the keyboard's own mic key, save, and exit. Focus traps in the form and in
-  edit mode are verified here or not at all.
+- [ ] **Switch Access, whole loop.** Using ONLY a switch: enter edit mode, Remove
+  a tile to free a slot (the starter board ships full), reach the now-empty slot,
+  add a phrase, dictate into "What you see" and "What it says" with the keyboard's
+  own mic key, save, and exit. Focus traps in the form and in edit mode are
+  verified here or not at all.
 - [ ] **TalkBack, whole loop.** Same run with TalkBack: every control announces
-  what it does and to which phrase ("Move Overwhelmed up", not "button");
-  nothing announces twice; an empty slot is a button in edit mode and silent on
-  the speak screen; a hidden tile is silent in speak mode and offers Unhide in
-  edit mode.
+  what it does and to which phrase ("Move Overwhelmed up", "Remove Overwhelmed",
+  not "button"); nothing announces twice; an empty slot is a button in edit mode
+  and silent on the speak screen; a hidden tile is silent in speak mode and offers
+  Unhide in edit mode; the system repair phrase offers neither Hide nor Remove.
 - [ ] **Accessibility Scanner over edit mode.** Google's Accessibility Scanner
   (an `AccessibilityService` reading Flutter's virtual node tree) across the
   editor and the edit-mode board. Human-driven, on-device, pre-release.
