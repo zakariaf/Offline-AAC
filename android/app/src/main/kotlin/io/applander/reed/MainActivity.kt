@@ -1,4 +1,4 @@
-package dev.zakariafatahi.offline_aac
+package io.applander.reed
 
 import io.flutter.embedding.android.FlutterActivity
 

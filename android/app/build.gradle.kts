@@ -19,7 +19,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "dev.zakariafatahi.offline_aac"
+    namespace = "io.applander.reed"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -29,7 +29,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "dev.zakariafatahi.offline_aac"
+        applicationId = "io.applander.reed"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         // versionCode / versionName come from `version: x.y.z+N` in pubspec.yaml.

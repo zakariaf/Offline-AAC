@@ -226,5 +226,7 @@ worse than no gate.
 `flutter create` and both unused here — the lint set is `very_good_analysis`, and
 there are no Cupertino icons in an Android-first app.
 
-**Application ID:** `dev.zakariafatahi.offline_aac`. Trivial to change now,
-permanent after the first store upload.
+**Application ID:** `io.applander.reed` (changed from the scaffold's
+`dev.zakariafatahi.offline_aac` on 2026-07-18, before any store upload —
+permanent after the first upload). This is both the Android `applicationId` /
+`namespace` and the iOS `PRODUCT_BUNDLE_IDENTIFIER`.
