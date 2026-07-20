@@ -67,7 +67,7 @@ dependencies:
   # share_plus: hands the finished export zip to the OS share sheet. The app
   # never sends the file — the user does, to a destination the app never sees or
   # names. No network path of its own.
-  share_plus: ^10.1.4
+  share_plus: ^13.2.1
 
   # NOT sqlite3_flutter_libs: that package is end-of-life as of Feb 2026
   # ("Not used anymore, update to version 3.x of package:sqlite3 instead") and
