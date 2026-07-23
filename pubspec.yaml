@@ -73,7 +73,7 @@ dependencies:
   # ("Not used anymore, update to version 3.x of package:sqlite3 instead") and
   # its final release is an empty tombstone. sqlite3 3.x supplies the native
   # library through Dart build hooks instead of the Flutter plugin mechanism.
-  sqlite3: ^3.4.0
+  sqlite3: ^3.5.0
 
 dev_dependencies:
   # Required by drift_dev. It pulls shelf and web_socket_channel for its
